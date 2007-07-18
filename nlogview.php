@@ -1,5 +1,6 @@
 <?php
 require 'DB.php';
+require 'vars.php';
 
 interface webPage{
 	public function getContent();
@@ -14,7 +15,7 @@ class nLogView implements webPage{
 
 	public function __construct()
 	{
-		$this->db = DB::connect('mysql://nooper:goldstar@localhost/nooper');
+		$this->db = DB::connect('mysql://$dbuser:$dbpass@$dbhost/$dbname');
 		if (DB::isError($this->db)) { die("Can't connect: " . $this->db->getMessage( )); }
 	}
 
