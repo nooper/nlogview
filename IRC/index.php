@@ -17,11 +17,22 @@ if($_GET['action'] == 'showlogs')
 	$pagecontent .= "</table>";
 
 
-
 	$pagecontent .= <<<EOD
 <form method=post action="?action=logsubmit" enctype="multipart/form-data">
 	Name: <input type=text name="Name">
 	<br/>
+	Server: <select name="serverid">	
+EOD;
+	$serverray = $thispage->getServers();
+	foreach($serverray as $server)
+	{
+		$servername = $server['name'];
+		$serverid = $server['id'];
+		$pagecontent .= "<option value=$serverid>$servername</option>";
+	}
+
+	$pagecontent .= <<<EOD
+	</select><br/>
 	Type:
 	<select name="sourcetype">
 		<option value="irssi">irssi</option>
@@ -52,15 +63,37 @@ elseif( $_GET['action'] == 'logsubmit' )
 		$pagecontent .= "Bad submit";
 	}
 }
-else
+elseif( $_GET['action'] == 'addserver' )
 {
-	$pagecontent .= "<table><tr><th>Name</th><th>Address</th></tr>";
+	if (isset($_GET['servername']) && isset($_GET['serveraddr']))
+	{
+		$thispage->addServer( $_GET['servername'], $_GET['serveraddr'] );
+		$pagecontent .= "Added server";
+	}
+}
+else
+{ // SHOW SERVER LIST
+	$pagecontent .= "<table border=1><tr><th>Name</th><th>Address</th><th></th></tr>";
 	$servers = $thispage->getServers();
 	foreach($servers as $row)
 	{
 		$pagecontent .= "<tr><td>" . $row['name'] . "</td><td>" . $row['address'] . "</td></tr>";
 	}
+	$pagecontent .= <<<ENDHTML
+<br>
+	<tr>
+		<form method=GET action="?action=addserver">
+		<input type=hidden name=action value=addserver>
+		<td><input type=text name=servername></td>
+		<td><input type=text name=serveraddr></td>
+		<td><input type=submit value="Add"></td>
+		</form>
+	</tr>
+ENDHTML;
+
 	$pagecontent .= "</table>";
+
+		
 }
 
 $thispage->addChildContent($pagecontent);

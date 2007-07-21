@@ -1,6 +1,6 @@
 <?php
 require 'DB.php';
-require 'vars.php';
+include('vars.php');
 
 interface webPage{
 	public function getContent();
@@ -15,8 +15,9 @@ class nLogView implements webPage{
 
 	public function __construct()
 	{
-		$this->db = DB::connect('mysql://$dbuser:$dbpass@$dbhost/$dbname');
-		if (DB::isError($this->db)) { die("Can't connect: " . $this->db->getMessage( )); }
+		$sqlstr = "mysql://{$GLOBALS['dbuser']}:{$GLOBALS['dbpass']}@{$GLOBALS['dbhost']}/{$GLOBALS['dbname']}";
+		$this->db = DB::connect($sqlstr);
+		if (DB::isError($this->db)) { die("$sqlstr :: Can't connect: " . $this->db->getMessage( )); }
 	}
 
 	public function getContent(){
@@ -64,5 +65,6 @@ class nLogView implements webPage{
 	public function addModule($modulename){
 		$this->modules[] = $modulename;
 	}
+
 
 }
