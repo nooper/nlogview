@@ -1,5 +1,7 @@
 <?php
-include('../nlogview.php');
+require('../nlogview.php');
+require('../Parsers/irssi.php');
+
 
 class IRC extends nLogView
 {
@@ -61,7 +63,7 @@ class IRC extends nLogView
 			$serverdata[] = array(
 				'name' => $row['name'],
 				'address' => $row['address'],
-				'id' => $row['id']
+				'id' => $row['serverid']
 			);
 		}
 		return $serverdata;
@@ -117,7 +119,7 @@ class IRC extends nLogView
 	{
 	}
 
-	public function readLogFile($path, $type, $name)
+	public function oldreadLogFile($path, $type, $name)
 	{
 		$retstr = "";
 		$userids = array();
@@ -258,6 +260,24 @@ class IRC extends nLogView
 			}
 		}
 		return $retstr;
+	}
+
+
+
+
+	public function readLogFile($path, $type, $name, $serverid)
+	{
+		//add generic channel name and get ID
+		//when channel name is found, update name
+		//add to log table
+
+
+		if($type == 'irssi')
+		{
+			$parser = new irssiparser;
+			$parser->addInput($path);
+			$parser->writeToDB( $this->db, $serverid );
+		}
 	}
 
 }

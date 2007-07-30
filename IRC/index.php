@@ -55,7 +55,8 @@ elseif( $_GET['action'] == 'logsubmit' )
 		($_FILES['logfileupload']['error'] == UPLOAD_ERR_OK) &&
        		isset($_POST['Name'])	)
 	{
-		$somestr = $thispage->readLogFile( $_FILES['logfileupload']['tmp_name'], 'irssi', $_POST['name']);
+
+		$somestr = $thispage->readLogFile( $_FILES['logfileupload']['tmp_name'], 'irssi', $_POST['Name'], $_POST['serverid']);
 		$pagecontent .= $somestr;
 	}
 	else

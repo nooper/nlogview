@@ -81,5 +81,3 @@ foreign key (ircuserid) references nlogview_ircusers(ircuserid),
 foreign key (logid) references nlogview_logs(logid)
 ) engine=innodb;
 
-
-delete from nlogview_channels;
