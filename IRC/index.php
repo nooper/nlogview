@@ -3,7 +3,12 @@
 include('IRC.php');
 
 $thispage = new IRC;
-$pagecontent;
+$pagecontent = "";
+
+if(!isset($_GET['action']))
+{
+	$_GET['action'] = "";
+}
 
 if($_GET['action'] == 'showlogs')
 {

@@ -67,7 +67,7 @@ submittime timestamp default current_timestamp
 
 create table nlogview_activity
 (
-activityid int unsigned primary key,
+activityid int unsigned auto_increment primary key,
 channelid int unsigned not null,
 ircuserid int unsigned not null,
 logid int unsigned not null,
