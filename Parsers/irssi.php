@@ -241,7 +241,6 @@ class irssiparser extends parser
 		$sql .= "AND bad.userid=? and bad.hostid=? ";
 		$sql .= "AND good.userid=? and good.hostid=? ";
 		$q = $this->db->query($sql, array($olduserid, $oldhostid, $newuserid, $newhostid));
-		print "$sql WITH $olduserid, $oldhostid, $newuserid, $newhostid. <br>\n";
 		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
 
 		$q = $this->db->query("UPDATE nlogview_ircusers SET userid=?, hostid=? WHERE userid=? AND hostid=?",
@@ -356,7 +355,7 @@ class irssiparser extends parser
 		}
 		else
 		{
-			unset($this->stranger, $newnick); // just in case
+			unset($this->stranger[$newnick]); // just in case
 		}
 
 		$userid = 0;
@@ -389,6 +388,7 @@ class irssiparser extends parser
 		$nickid = $this->getNickID( $match[2] );
 		$userid = $this->getUserID( $match[3] );
 		$hostid = $this->getHostID( $match[4] );
+		unset($this->stranger[$match[2]]);
 		$this->nick2userhost[$nickid] = "$userid@$hostid";
 		$ircuserid = $this->getIRCUserID( $nickid, $userid, $hostid );
 		$this->nick2ircuser[$match[2]] = $ircuserid;
@@ -419,7 +419,7 @@ class irssiparser extends parser
 	private function singleFileToDB( $path )
 	{ // returns channelname
 		$this->logid = $this->addLogRecord( $path, $path );
-		$filehandle = fopen( $path, "r" );
+		$filehandle = gzopen( $path, "r" );
 		while ( !feof( $filehandle ) )
 		{
 			set_time_limit(30);
@@ -463,7 +463,7 @@ class irssiparser extends parser
 				//dunno
 			}
 		}
-		fclose( $filehandle );
+		gzclose( $filehandle );
 	}
 
 	public function writeToDB( $db, $serverid )
