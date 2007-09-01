@@ -54,6 +54,50 @@ EOD;
 EOD;
 
 }
+elseif($_GET['action'] == 'shownicks')
+{
+	$nickdata = $thispage->getNicks();
+	$pagecontent .= "<br/><table border=1>";
+	foreach($nickdata as $nickinfo)
+	{
+		$pagecontent .= "<tr><td><a href=?action=filter&nickid=" . $nickinfo['id'] . ">" .  $nickinfo['name'] . "</a></td></tr>";
+	}
+	$pagecontent .= "</table>";
+}
+elseif($_GET['action'] == 'showusers')
+{
+	$userdata = $thispage->getUsers();
+	$pagecontent .= "<br/><table border=1>";
+	foreach($userdata as $userinfo)
+	{
+		$pagecontent .= "<tr><td><a href=?action=filter&userid=" . $userinfo['id'] . ">" . $userinfo['name'] . "</a></td></tr>";
+	}
+	$pagecontent .= "</table>";
+}
+elseif($_GET['action'] == 'showhosts')
+{
+	$hostdata = $thispage->getHosts();
+	$pagecontent .= "<br/><table border=1>";
+	foreach($hostdata as $hostinfo)
+	{
+		$pagecontent .= "<tr><td><a href=?action=filter&hostid=" . $hostinfo['id'] . ">" . $hostinfo['name'] . "</a></td></tr>";
+	}
+	$pagecontent .= "</table>";
+}
+elseif($_GET['action'] == 'showircusers')
+{
+	$userray = $thispage->getIRCUsers();
+	$pagecontent .= "<br/><table border=1><tr><th>Nick</th><th>User</th><th>Host</th></tr>";
+	foreach($userray as $s)
+	{
+		$pagecontent .= "<tr>";
+		$pagecontent .= "<td><a href=?action=filter&nickid=" . $s['nickid'] . ">" . $s['nickname'] . "</a></td>";
+		$pagecontent .= "<td><a href=?action=filter&userid=" . $s['userid'] . ">" . $s['username'] . "</a></td>";
+		$pagecontent .= "<td><a href=?action=filter&hostid=" . $s['hostid'] . ">" . $s['hostname'] . "</a></td>";
+		$pagecontent .= "</tr>";
+	}
+	$pagecontent .= "</table>";
+}
 elseif( $_GET['action'] == 'logsubmit' )
 {
 	if( isset($_FILES['logfileupload']) &&
@@ -76,6 +120,43 @@ elseif( $_GET['action'] == 'addserver' )
 		$thispage->addServer( $_GET['servername'], $_GET['serveraddr'] );
 		$pagecontent .= "Added server";
 	}
+}
+elseif( $_GET['action'] == 'filter' )
+{
+	$nickid = 0;
+	$userid = 0;
+	$hostid = 0;
+
+	if(isset($_GET['nickid']))
+	{
+		$nickid = $_GET['nickid'];
+	}
+
+	if(isset($_GET['userid']))
+	{
+		$userid = $_GET['userid'];
+	}
+
+	if(isset($_GET['hostid']))
+	{
+		$hostid = $_GET['hostid'];
+	}
+
+	$matches = $thispage->filterByID($nickid, $userid, $hostid);
+
+	$pagecontent .= "<table border=1><tr><th>Nick</th><th>User</th><th>Host</th><th>Activity Count</th></tr>";
+
+	foreach($matches as $u)
+	{
+		$pagecontent .= "<tr>";
+		$pagecontent .= "<td><a href=?action=filter&nickid=" . $u['nickid'] . ">" . $u['nickname'] . "</a></td>";
+		$pagecontent .= "<td><a href=?action=filter&userid=" . $u['userid'] . ">" . $u['username'] . "</a></td>";
+		$pagecontent .= "<td><a href=?action=filter&hostid=" . $u['hostid'] . ">" . $u['hostname'] . "</a></td>";
+		$pagecontent .= "<td>" . $u['count'] . "</td>";
+	}
+
+	$pagecontent .= "</table>";
+
 }
 else
 { // SHOW SERVER LIST
