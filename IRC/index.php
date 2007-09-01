@@ -5,14 +5,8 @@ include('IRC.php');
 $thispage = new IRC;
 $pagecontent = "";
 
-if(!isset($_GET['action']))
+function showLogs($thispage)
 {
-	$_GET['action'] = "";
-}
-
-if($_GET['action'] == 'showlogs')
-{
-
 	$logdata = $thispage->getlogs();
 	$pagecontent .= "<br/><table border=1><tr><th>Name</th><th>Source</th><th>Timestamp</th></tr>";
 	foreach($logdata as $rowdata)
@@ -52,7 +46,19 @@ EOD;
 </tr>
 </table>
 EOD;
+	return $pagecontent;
 
+}
+
+
+if(!isset($_GET['action']))
+{
+	$_GET['action'] = "";
+}
+
+if($_GET['action'] == 'showlogs')
+{
+	$pagecontent .= showLogs($thispage);
 }
 elseif($_GET['action'] == 'shownicks')
 {
@@ -105,8 +111,9 @@ elseif( $_GET['action'] == 'logsubmit' )
        		isset($_POST['Name'])	)
 	{
 
-		$somestr = $thispage->readLogFile( $_FILES['logfileupload']['tmp_name'], 'irssi', $_POST['Name'], $_POST['serverid']);
+		$somestr = $thispage->readLogFile( $_FILES['logfileupload']['tmp_name'], $_FILES['logfileupload']['name'], 'irssi', $_POST['Name'], $_POST['serverid']);
 		$pagecontent .= $somestr;
+		$pagecontent .= showLogs($thispage);
 	}
 	else
 	{

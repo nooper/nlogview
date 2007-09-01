@@ -35,7 +35,7 @@ class irssiparser extends parser
 		$w = "([^ ]+)"; //word
 		$this->lineregex["logopen"] = "/^--- Log opened $w $w $w $w $w$/";
 		$this->lineregex["logclose"] = "/^--- Log closed/";
-		$this->lineregex["join"] = "/^$t -!- $w \[$w@$w\] has joined (#[^ ]+)$/";
+		$this->lineregex["join"] = "/^$t -!- $w \[$w@$w\] has joined $w\n$/";
 		$this->lineregex["quit"] = "/^$t -!- $w \[$w@$w\] has quit/";
 		$this->lineregex["part"] = "/^$t -!- $w \[$w@$w\] has left $w/";
 		$this->lineregex["nickchange"] = "/^$t -!- $w is now known as $w\n$/";
@@ -43,10 +43,15 @@ class irssiparser extends parser
 		$this->lineregex["daychange"] = "/--- Day changed $w $w $w $w$/";
 	}
 
-	public function addInput( $filename, $formatstring = '' )
+	public function addInput( $localpath, $realname, $username, $formatstring = '' )
 	{
 		$this->fmtstrings[$filename] = $formatstring;
-		$this->inputs[] = $filename;
+		$this->inputs[] = array( 
+			'localpath' => $localpath,
+			'realname' => $realname,
+			'username' => $username,
+			'fmt' => $formatstring
+		);
 	}
 
 	private function addChannel($serverid, $channelname)
@@ -285,6 +290,7 @@ class irssiparser extends parser
 		$nick = $match[2];
 		$user = $match[3];
 		$host = $match[4];
+		$channel = $match[5];
 		$ircuserid = 0;
 		$nickid = 0; $userid = 0; $hostid = 0;
 		if( array_key_exists($nick, $this->nick2ircuser) )
@@ -308,6 +314,7 @@ class irssiparser extends parser
 		}
 		$ircuserid = $this->getIRCUserID($nickid, $userid, $hostid);
 		$this->insertActivity( $ircuserid, irssiparser::ACT_PART, $time );
+		return $channel;
 	}
 
 	private function event_quit( $match )
@@ -388,11 +395,14 @@ class irssiparser extends parser
 		$nickid = $this->getNickID( $match[2] );
 		$userid = $this->getUserID( $match[3] );
 		$hostid = $this->getHostID( $match[4] );
+		$channel = $match[5];
+		// in a netsplit, irssi doesn't log everyone who quits. So every join should assume user alredy exists in our caches
 		unset($this->stranger[$match[2]]);
 		$this->nick2userhost[$nickid] = "$userid@$hostid";
 		$ircuserid = $this->getIRCUserID( $nickid, $userid, $hostid );
 		$this->nick2ircuser[$match[2]] = $ircuserid;
 		$this->insertActivity( $ircuserid, irssiparser::ACT_JOIN, $time );
+		return $channel;
 	}
 
 	private function event_logopen( $match )
@@ -416,15 +426,42 @@ class irssiparser extends parser
 		$this->logdate = "$match[3] $match[2] $match[4]";
 	}
 
-	private function singleFileToDB( $path )
+	private function setChannelName( $channelid, $channelname )
+	{
+		$sql = "SELECT old.channelid ";
+		$sql .= "FROM nlogview_channels old ";
+		$sql .= "INNER JOIN nlogview_channels new ON new.channelid=? AND new.channelid <> old.channelid ";
+		$sql .= "WHERE old.name=?";
+		$q = $this->db->query($sql, array($channelid, $channelname));
+		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		if($q->numRows() > 0)
+		{
+			$row = $q->fetchrow();
+			$oldchannelid = $row[0];
+			$sql = "UPDATE nlogview_activity SET channelid = $oldchannelid WHERE channelid = $channelid";
+			$q = $this->db->query($sql);
+			if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+			$sql = "DELETE FROM nlogview_channels WHERE channelid = $channelid";
+			$q = $this->db->query($sql);
+			if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		}
+		else
+		{
+			$sql = "UPDATE nlogview_channels SET name=? WHERE channelid=?";
+			$q = $this->db->query($sql, array($channelname, $channelid));
+			if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		}
+	}
+
+	private function singleFileToDB( $path, $username, $realname )
 	{ // returns channelname
-		$this->logid = $this->addLogRecord( $path, $path );
+		$this->channelid = $this->addChannel( $this->serverid, "newchannel" );
+		$this->logid = $this->addLogRecord( $username, $realname );
 		$filehandle = gzopen( $path, "r" );
 		while ( !feof( $filehandle ) )
 		{
 			set_time_limit(30);
 			$line = fgets($filehandle);
-			print $line . "<br>\n";
 			$match = array();
 			if( preg_match( $this->lineregex["msg"], $line, $match ) )
 			{
@@ -436,7 +473,7 @@ class irssiparser extends parser
 			}
 			elseif( preg_match( $this->lineregex["join"], $line, $match ) )
 			{
-				$this->event_join( $match );
+				$channelname = $this->event_join( $match );
 			}
 			elseif( preg_match( $this->lineregex["quit"], $line, $match ) )
 			{
@@ -444,7 +481,7 @@ class irssiparser extends parser
 			}
 			elseif( preg_match( $this->lineregex["part"], $line, $match ) )
 			{
-				$this->event_part( $match );
+				$channelname = $this->event_part( $match );
 			}
 			elseif( preg_match( $this->lineregex["logclose"], $line, $match ) )
 			{
@@ -464,24 +501,20 @@ class irssiparser extends parser
 			}
 		}
 		gzclose( $filehandle );
+		$this->setChannelName( $this->channelid, $channelname );
 	}
 
 	public function writeToDB( $db, $serverid )
 	{
 		$this->db = $db;
-		//$this->db->query("START TRANSACTION");
-		$channelname = "newchannel";
-		$this->channelid = $this->addChannel( $serverid, $channelname );
+		$this->db->query("START TRANSACTION");
 		$this->serverid = $serverid;
 		foreach($this->inputs as $singlefile)
 		{
-			$channelname = $this->singleFileToDB( $singlefile );
-			//update channelname here
+			$this->singleFileToDB( $singlefile['localpath'], $singlefile['username'], $singlefile['realname'] );
 		}
-		//$this->db->query("COMMIT");
-
+		$this->db->query("COMMIT");
 	}
-
 }
 
 ?>
