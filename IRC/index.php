@@ -151,11 +151,14 @@ elseif( $_GET['action'] == 'filter' )
 
 	$matches = $thispage->filterByID($nickid, $userid, $hostid);
 
+	$pagecontent .= "<form method=POST action='?action=genmap'>";
+
 	$pagecontent .= "<table border=1><tr><th>Nick</th><th>User</th><th>Host</th><th>Activity Count</th></tr>";
 
 	foreach($matches as $u)
 	{
 		$pagecontent .= "<tr>";
+		$pagecontent .= "<td><input type=checkbox name='ircuserid[]' value=" . $u['ircuserid'] . "></td>";
 		$pagecontent .= "<td><a href=?action=filter&nickid=" . $u['nickid'] . ">" . $u['nickname'] . "</a></td>";
 		$pagecontent .= "<td><a href=?action=filter&userid=" . $u['userid'] . ">" . $u['username'] . "</a></td>";
 		$pagecontent .= "<td><a href=?action=filter&hostid=" . $u['hostid'] . ">" . $u['hostname'] . "</a></td>";
@@ -163,6 +166,21 @@ elseif( $_GET['action'] == 'filter' )
 	}
 
 	$pagecontent .= "</table>";
+
+	$pagecontent .= "<input type=submit value='Generate image'></form>";
+
+}
+elseif( $_GET['action'] == 'genmap' )
+{ // GENERATE USER MAP
+	$ids = $_POST['ircuserid'];
+	$posted = "";
+	foreach($ids as $id){
+		$posted .= $id . ",";
+	}
+	$len = strlen($posted);
+	$posted = substr($posted, 0, $len - 1);
+
+	$pagecontent .= "<img src=genmap.php?ids=$posted>";
 
 }
 else

@@ -1,24 +1,16 @@
 <?php
-require 'DB.php';
-include('vars.php');
+require 'dbclient.php';
 
 interface webPage{
 	public function getContent();
 	public function addChildContent($value);
 }
 
-class nLogView implements webPage{
+class nLogView extends dbclient implements webPage {
 	private $childhtml;
 	private $html;
 	private $modules = array();
 	protected $db;
-
-	public function __construct()
-	{
-		$sqlstr = "mysql://{$GLOBALS['dbuser']}:{$GLOBALS['dbpass']}@{$GLOBALS['dbhost']}/{$GLOBALS['dbname']}";
-		$this->db = DB::connect($sqlstr);
-		if (DB::isError($this->db)) { die("$sqlstr :: Can't connect: " . $this->db->getMessage( )); }
-	}
 
 	public function getContent(){
 		$modlist = "";
