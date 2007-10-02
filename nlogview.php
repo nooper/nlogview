@@ -44,7 +44,7 @@ class nLogView extends dbclient implements webPage {
 			</tr>
 			</table>
 			</body>
-			<html>
+			</html>
 			";
 		return $this->html;
 	}
