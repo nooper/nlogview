@@ -199,6 +199,79 @@ class IRC extends nLogView
 		}
 	}
 
+	public function getActivityMap( $userids, $cellheight = 10, $cellwidth = 1, $celltime = 120, $cellsperrow = 0, $logbase = 2 ) {
+
+		if ( $cellsperrow == 0 ) {
+			$cellsperrow = 86400 / $celltime;
+		}
+		$rowtime = $cellsperrow * $celltime;
+
+		/* default row time is 1 day */
+		/* default sample time per column is 2 minutes */
+
+		$sql = "select $celltime * round(unix_timestamp(min(activitytime))/$celltime), $celltime * round(unix_timestamp(max(activitytime))/$celltime) ";
+		$sql .= "from nlogview_activity ";
+		$sql .= "where ircuserid in ($userids)";
+		$q = $this->db->query($sql);
+		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		$row = $q->fetchrow();
+		$unix_begin_time = $row[0];
+		$unix_end_time = $row[1];
+		$unix_interval_time = $row[1] - $row[0];
+		$rowcount = ceil($unix_interval_time / $rowtime);
+
+		$image = imagecreate( $cellsperrow * $cellwidth, $rowcount * $cellheight );
+		$blue = imagecolorallocate($image, 0, 0, 255);
+		$white = imagecolorallocate($image, 255, 255, 255);
+
+		$sql = "select round(log($logbase,count(activityid)))+1, $celltime * round(unix_timestamp(activitytime) / $celltime) ";
+		$sql .= "from nlogview_activity ";
+		$sql .= "where ircuserid in ($userids) ";
+		$sql .= "group by round(unix_timestamp(activitytime)/$celltime) ";
+		$sql .= "order by round(unix_timestamp(activitytime)/$celltime)";
+		$q = $this->db->query($sql);
+		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		while($row = $q->fetchrow()){
+			$index = ($row[1] - $unix_begin_time) / $celltime;
+			$x = fmod($index, $cellsperrow);
+			$y = floor($index / $cellsperrow);
+			$rc = imagefilledrectangle( $image, $x, ($y*$cellheight)-$row[0], $x, ($y*$cellheight)+$row[0] , $white );
+		}
+
+		return $image;
+	}
+
+	public function getHistogram ( $userids, $interval = 120 ) {
+		$sql = "select c, count(c) from ";
+		$sql .= "( select count(activityid) c, $interval * round(unix_timestamp(activitytime) / $interval) time ";
+		$sql .= "from nlogview_activity ";
+		$sql .= "where ircuserid in ( $userids ) ";
+		$sql .= "group by round(unix_timestamp(activitytime) / $interval) ) o ";
+		$sql .= "group by c ";
+		$sql .= "order by c";
+		$q = $this->db->query($sql);
+		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		while($row = $q->fetchrow()){
+			$lines[$row[0]] = $row[1];
+			$total += $row[1];
+			$last = $row[0];
+		}
+
+		$image = imagecreate( $last * 10, 110 );
+		$white = imagecolorallocate($image, 255, 255, 255);
+		$red = imagecolorallocate($image, 255, 0, 0);
+		$black = imagecolorallocate($image, 0, 0, 0);
+
+		for( $x = 1; $x <= $last; $x++ ) {
+			if( isset($lines[$x]) )
+				$lines[$x] = round( ($lines[$x] / $total) * 100);
+			else
+				$lines[$x] = 0;
+			$rc = imagefilledrectangle( $image, ($x * 10) - 10, 110, $x * 10, 110 - $lines[$x], $red );
+		}
+
+		return $image;
+	}
 }
 
 ?>

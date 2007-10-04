@@ -166,6 +166,10 @@ elseif( $_GET['action'] == 'filter' )
 	}
 
 	$pagecontent .= "</table>";
+	$pagecontent .= "<select name='maptype'>";
+	$pagecontent .= "<option value='activity'>Activity</option>";
+	$pagecontent .= "<option value='histogram'>Histogram</option>";
+	$pagecontent .= "</select>";
 
 	$pagecontent .= "<input type=submit value='Generate image'></form>";
 
@@ -180,7 +184,8 @@ elseif( $_GET['action'] == 'genmap' )
 	$len = strlen($posted);
 	$posted = substr($posted, 0, $len - 1);
 
-	$pagecontent .= "<img src=genmap.php?ids=$posted>";
+	$pagecontent .= "<img src=genmap.php?type=" . $_POST['maptype'] . "&ids=$posted>";
+	print "type is " . $_POST['maptype'] . "<br>";
 
 }
 else
