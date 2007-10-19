@@ -153,7 +153,7 @@ elseif( $_GET['action'] == 'filter' )
 
 	$pagecontent .= "<form method=POST action='?action=genmap'>";
 
-	$pagecontent .= "<table border=1><tr><th>Nick</th><th>User</th><th>Host</th><th>Activity Count</th></tr>";
+	$pagecontent .= "<table border=1><tr><th></th><th>Nick</th><th>User</th><th>Host</th><th>Activity Count</th></tr>";
 
 	foreach($matches as $u)
 	{
@@ -185,10 +185,8 @@ elseif( $_GET['action'] == 'genmap' )
 	$posted = substr($posted, 0, $len - 1);
 
 	$pagecontent .= "<img src=genmap.php?type=" . $_POST['maptype'] . "&ids=$posted>";
-	print "type is " . $_POST['maptype'] . "<br>";
-
 }
-else
+elseif( $_GET['action'] == 'showservers' )
 { // SHOW SERVER LIST
 	$pagecontent .= "<table border=1><tr><th>Name</th><th>Address</th><th></th></tr>";
 	$servers = $thispage->getServers();
@@ -209,8 +207,15 @@ else
 ENDHTML;
 
 	$pagecontent .= "</table>";
-
 		
+}
+elseif( $_GET['action'] == 'search' )
+{
+	$pagecontent .= "<table>";
+}
+else
+{
+	$pagecontent .= "What are you doing here?";
 }
 
 $thispage->addChildContent($pagecontent);

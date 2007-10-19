@@ -15,7 +15,8 @@ class IRC extends nLogView
 			<table>
 			<tr>
 			<td>
-			<a href="">Servers</a>
+			<a href="?action=search">Search</a>
+			| <a href="?action=showservers">Servers</a>
 			| <a href="?action=shownicks">Nicknames</a>
 			| <a href="?action=showusers">Users</a>
 			| <a href="?action=showhosts">Hosts</a> 
@@ -241,7 +242,7 @@ class IRC extends nLogView
 		return $image;
 	}
 
-	public function getHistogram ( $userids, $interval = 120 ) {
+	public function getHistogram ( $userids, $interval = 3600 ) {
 		$sql = "select c, count(c) from ";
 		$sql .= "( select count(activityid) c, $interval * round(unix_timestamp(activitytime) / $interval) time ";
 		$sql .= "from nlogview_activity ";
