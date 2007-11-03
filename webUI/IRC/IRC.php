@@ -15,7 +15,8 @@ class IRC extends nLogView
 			<table>
 			<tr>
 			<td>
-			<a href="?action=search">Search</a>
+			<b>IRC</b>
+			:: <a href="?action=search">Search</a>
 			| <a href="?action=showservers">Servers</a>
 			| <a href="?action=shownicks">Nicknames</a>
 			| <a href="?action=showusers">Users</a>
@@ -44,7 +45,7 @@ class IRC extends nLogView
 	public function getLogs()
 	{
 		$logdata = array();
-		$q = $this->db->query('SELECT * FROM nlogview_logs');
+		$q = $this->db->query('SELECT * FROM nlogview_logs ORDER BY submittime DESC');
 		while($row = $q->fetchRow(DB_FETCHMODE_ASSOC))
 		{
 			$logdata[] = array(
@@ -143,7 +144,7 @@ class IRC extends nLogView
 		$q = $this->db->query('INSERT INTO nlogview_servers (name, address) values (?,?)', array($name, $address));
 	}
 
-	public function filterByID($nickid, $userid, $hostid)
+	public function filterByID($nickid = 0, $userid = 0, $hostid = 0)
 	{ // returns array of ircuserids with ircuser data
 		$sql = "SELECT n.name nickname, u.name username, h.name hostname, i.ircuserid, i.nickid, i.userid, i.hostid, count(a.activityid) c ";
 		$sql .= "FROM nlogview_ircusers i ";
@@ -166,6 +167,50 @@ class IRC extends nLogView
 		$sql .= "GROUP BY i.ircuserid ";
 		$sql .= "ORDER BY count(a.activityid) DESC";
 
+		return $this->filterSQL2Array($sql);
+	}
+
+	public function filterByName($nicktype, $usertype, $hosttype, $nickname = '', $username = '', $hostname = '')
+	{
+		$sql = "SELECT n.name nickname, u.name username, h.name hostname, i.ircuserid, i.nickid, i.userid, i.hostid, count(a.activityid) c ";
+		$sql .= "FROM nlogview_ircusers i ";
+		$sql .= "INNER JOIN nlogview_nicks n ON i.nickid = n.nickid ";
+		$sql .= "INNER JOIN nlogview_users u ON i.userid = u.userid ";
+		$sql .= "INNER JOIN nlogview_hosts h ON i.hostid = h.hostid ";
+		$sql .= "INNER JOIN nlogview_activity a ON i.ircuserid = a.ircuserid WHERE ";
+
+		if( strlen($nickname) > 0 ) {
+			if( $nicktype == 'is' )
+				$filter[] = " n.name = '$nickname' ";
+			elseif( $nicktype == 'like' )
+				$filter[] = " n.name like '%$nickname%' ";
+		}
+		if( strlen($username) > 0 ) {
+			if( $usertype == 'is' )
+				$filter[] = " u.name = '$username' ";
+			elseif( $usertype == 'like' )
+				$filter[] = " u.name like '%$username%' ";
+		}
+		if( strlen($hostname) > 0 ) {
+			if( $hosttype == 'is' )
+				$filter[] = " h.name = '$hostname' ";
+			elseif( $hosttype == 'like' )
+				$filter[] = " h.name like '%$hostname%' ";
+		}
+		
+		foreach( $filter as $cond ) {
+			$sql .= $cond . " AND ";
+		}
+
+		$sql = substr( $sql, 0, strlen($sql) - 4 );
+
+		$sql .= "GROUP BY i.ircuserid ";
+		$sql .= "ORDER BY count(a.activityid) DESC";
+
+		return $this->filterSQL2Array($sql);
+	}
+
+	private function filterSQL2Array( $sql ) {
 		$q = $this->db->query($sql);
 		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
 		$retval = array();
@@ -200,28 +245,45 @@ class IRC extends nLogView
 		}
 	}
 
-	public function getActivityMap( $userids, $cellheight = 10, $cellwidth = 1, $celltime = 120, $cellsperrow = 0, $logbase = 2 ) {
+	private function getMaxFont( $maxheight, $max = 5 ) {
+		$cur = $prev = 1;
+		for( $cur = $prev; $cur <= max; $cur++ ) {
+			if( imagefontheight($cur) > $maxheight ) {
+				return $prev;
+			}
+			else {
+				$prev = cur;
+			}
+		}
+		return $cur;
+	}
+
+	public function getActivityMap( $userids, $cellheight = 11, $cellwidth = 1, $celltime = 120, $cellsperrow = 0, $logbase = 2 ) {
 
 		if ( $cellsperrow == 0 ) {
-			$cellsperrow = 86400 / $celltime;
+			$cellsperrow = 86400 / $celltime; //default to 1 day = 1 row
 		}
 		$rowtime = $cellsperrow * $celltime;
 
-		/* default row time is 1 day */
-		/* default sample time per column is 2 minutes */
+		/* keep cellheight odd, minimum 9 (lowest font height available) */
 
+		//Get first and last date for image map
 		$sql = "select $celltime * round(unix_timestamp(min(activitytime))/$celltime), $celltime * round(unix_timestamp(max(activitytime))/$celltime) ";
 		$sql .= "from nlogview_activity ";
 		$sql .= "where ircuserid in ($userids)";
 		$q = $this->db->query($sql);
 		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
 		$row = $q->fetchrow();
-		$unix_begin_time = $row[0];
+		$unix_begin_time = mktime(0, 0, 0, date('m', $row[0]), date('d', $row[0]), date('Y', $row[0]));
 		$unix_end_time = $row[1];
-		$unix_interval_time = $row[1] - $row[0];
-		$rowcount = ceil($unix_interval_time / $rowtime);
+		$rowcount = ceil(($unix_end_time - $unix_begin_time) / $rowtime);
 
-		$image = imagecreate( $cellsperrow * $cellwidth, $rowcount * $cellheight );
+		//get size for date stamps
+		$font = $this->getMaxFont( $cellheight );
+		$xoffset = imagefontwidth($font) * 12;
+
+		//create image, sized according to fetched dates
+		$image = imagecreate( $xoffset + ($cellsperrow * $cellwidth), $rowcount * $cellheight );
 		$blue = imagecolorallocate($image, 0, 0, 255);
 		$white = imagecolorallocate($image, 255, 255, 255);
 
@@ -232,11 +294,23 @@ class IRC extends nLogView
 		$sql .= "order by round(unix_timestamp(activitytime)/$celltime)";
 		$q = $this->db->query($sql);
 		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		$mid = $cellheight / 2;
+		$now = $unix_begin_time;
+		$date_y_offset = ( $cellheight - imagefontheight($font) ) / 2;
+		//stamp dates
+		for( $currow = 0; $currow < $rowcount; $currow++) {
+			imagestring($image, $font, 0, $date_y_offset + ($currow * $cellheight), date("Y-m-d", $now), $white);
+			$now += $rowtime;
+		}
 		while($row = $q->fetchrow()){
 			$index = ($row[1] - $unix_begin_time) / $celltime;
-			$x = fmod($index, $cellsperrow);
-			$y = floor($index / $cellsperrow);
-			$rc = imagefilledrectangle( $image, $x, ($y*$cellheight)-$row[0], $x, ($y*$cellheight)+$row[0] , $white );
+			$x = $xoffset + fmod($index, $cellsperrow);
+			$x2 = $x * $cellwidth;
+			$x1 = $x2 - $cellwidth + 1;
+			$y = $mid + (floor($index / $cellsperrow) * $cellheight);
+			$y1 = $y - $row[0];
+			$y2 = $y + $row[0];
+			$rc = imagefilledrectangle( $image, $x1, $y1, $x2, $y2 , $white );
 		}
 
 		return $image;

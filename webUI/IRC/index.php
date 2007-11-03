@@ -211,11 +211,90 @@ ENDHTML;
 }
 elseif( $_GET['action'] == 'search' )
 {
-	$pagecontent .= "<table>";
+
+	$pagecontent .= "<form method=GET>";
+	$pagecontent .= "<input type=hidden name=action value=search>";
+
+	$pagecontent .= "<table border=0>";
+
+	$pagecontent .= "<tr>";
+	$pagecontent .= "<th>nick</th>";
+	$pagecontent .= "<th>[</th>";
+	$pagecontent .= "<th>user</th>";
+	$pagecontent .= "<th>@</th>";
+	$pagecontent .= "<th>host</th>";
+	$pagecontent .= "<th>]</th>";
+	$pagecontent .= "</tr>";
+
+
+	$pagecontent .= "<tr>";
+	$pagecontent .= "<td align=middle><select name=nicksearch><option value=is ";
+	if($_GET['nicksearch'] == 'is') $pagecontent .= "selected";
+	$pagecontent .= ">is</option><option value=like ";
+	if($_GET['nicksearch'] == 'like') $pagecontent .= "selected";
+	$pagecontent .= ">like</option></td>";
+	$pagecontent .= "<td></td>";
+	$pagecontent .= "<td align=middle><select name=usersearch ";
+	if($_GET['usersearch'] == 'is') $pagecontent .= "selected";
+	$pagecontent .= "><option value=is>is</option><option value=like ";
+	if($_GET['usersearch'] == 'like') $pagecontent .= "selected";
+	$pagecontent .= ">like</option></td>";
+	$pagecontent .= "<td></td>";
+	$pagecontent .= "<td align=middle><select name=hostsearch><option value=is ";
+	if($_GET['hostsearch'] == 'is') $pagecontent .= "selected";
+	$pagecontent .= ">is</option><option value=like ";
+	if($_GET['hostsearch'] == 'like') $pagecontent .= "selected";
+	$pagecontent .= ">like</option></td>";
+	$pagecontent .= "<td></td>";
+	$pagecontent .= "</tr>";
+
+	$pagecontent .= "<tr>";
+	$pagecontent .= "<td><input type=textbox name=nickvalue value={$_GET['nickvalue']}></td>";
+	$pagecontent .= "<td>[</td>";
+	$pagecontent .= "<td><input type=textbox name=uservalue value={$_GET['uservalue']}></td>";
+	$pagecontent .= "<td>@</td>";
+	$pagecontent .= "<td><input type=texbox name=hostvalue value={$_GET['hostvalue']}></td>";
+	$pagecontent .= "<td>]</td>";
+	$pagecontent .= "</tr>";
+
+	$pagecontent .= "</table>";
+
+
+	$pagecontent .= "<input type=submit value=Search>";
+	$pagecontent .= "</form>";
+
+	if( ($_GET['nickvalue'] != '') || ($_GET['uservalue'] != '') || ($_GET['hostvalue'] != '') )
+	{
+		$matches = $thispage->filterByName( $_GET['nicksearch'], $_GET['usersearch'], $_GET['hostsearch'],
+			$_GET['nickvalue'], $_GET['uservalue'], $_GET['hostvalue'] );
+
+		$pagecontent .= "<form method=POST action='?action=genmap'>";
+
+		$pagecontent .= "<table border=1><tr><th></th><th>Nick</th><th>User</th><th>Host</th><th>Activity Count</th></tr>";
+
+		foreach($matches as $u)
+		{
+			$pagecontent .= "<tr>";
+			$pagecontent .= "<td><input type=checkbox name='ircuserid[]' value=" . $u['ircuserid'] . "></td>";
+			$pagecontent .= "<td><a href=?action=filter&nickid=" . $u['nickid'] . ">" . $u['nickname'] . "</a></td>";
+			$pagecontent .= "<td><a href=?action=filter&userid=" . $u['userid'] . ">" . $u['username'] . "</a></td>";
+			$pagecontent .= "<td><a href=?action=filter&hostid=" . $u['hostid'] . ">" . $u['hostname'] . "</a></td>";
+			$pagecontent .= "<td>" . $u['count'] . "</td>";
+		}
+
+		$pagecontent .= "</table>";
+		$pagecontent .= "<select name='maptype'>";
+		$pagecontent .= "<option value='activity'>Activity</option>";
+		$pagecontent .= "<option value='histogram'>Histogram</option>";
+		$pagecontent .= "</select>";
+
+		$pagecontent .= "<input type=submit value='Generate image'></form>";
+	}
+
 }
 else
 {
-	$pagecontent .= "What are you doing here?";
+	//$pagecontent .= "What are you doing here?";
 }
 
 $thispage->addChildContent($pagecontent);
