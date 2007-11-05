@@ -9,9 +9,9 @@ class IRC extends nLogView
 	private $childhtml;
 	protected $db;
 
-	public function getContent()
-	{
-		$myhtml = '
+	public function printHeader() {
+		parent::printHeader();
+		echo <<<EOF
 			<table>
 			<tr>
 			<td>
@@ -24,22 +24,18 @@ class IRC extends nLogView
 			| <a href="?action=showircusers">IRC Users</a> 
 			| <a href="?action=showlogs">Logs</a>
 			<tr><td>
-			'
-			. $this->childhtml .
-			'
+EOF;
+
+	}
+
+	public function printFooter() {
+		echo <<<EOF
 			</tr></td>
 			</td>
 			</tr>
 			</table>
-			';
-
-		parent::addChildContent($myhtml);
-		return parent::getContent();
-	}
-
-	public function addChildContent($value)
-	{
-		$this->childhtml .= $value;
+EOF;
+		parent::printFooter();
 	}
 
 	public function getLogs()

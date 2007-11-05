@@ -5,32 +5,34 @@ include('IRC.php');
 $thispage = new IRC;
 $pagecontent = "";
 
+$thispage->printHeader();
+
 function showLogs($thispage)
 {
 	$logdata = $thispage->getlogs();
-	$pagecontent .= "<br/><table border=1><tr><th>Name</th><th>Source</th><th>Timestamp</th></tr>";
+	echo "<br/><table border=1><tr><th>Name</th><th>Source</th><th>Timestamp</th></tr>";
 	foreach($logdata as $rowdata)
 	{
-		$pagecontent .= "<tr><td>" . $rowdata['name'] . "</td><td>" . $rowdata['source'] . "</td><td>" . $rowdata['timestamp'] . "</td></tr>";
+		echo  "<tr><td>" . $rowdata['name'] . "</td><td>" . $rowdata['source'] . "</td><td>" . $rowdata['timestamp'] . "</td></tr>";
 	}
-	$pagecontent .= "</table>";
+	echo "</table>";
 
 
-	$pagecontent .= <<<EOD
+	echo <<<ENDHTML
 <form method=post action="?action=logsubmit" enctype="multipart/form-data">
 	Name: <input type=text name="Name">
 	<br/>
 	Server: <select name="serverid">	
-EOD;
+ENDHTML;
 	$serverray = $thispage->getServers();
 	foreach($serverray as $server)
 	{
 		$servername = $server['name'];
 		$serverid = $server['id'];
-		$pagecontent .= "<option value=$serverid>$servername</option>";
+		echo "<option value=$serverid>$servername</option>";
 	}
 
-	$pagecontent .= <<<EOD
+	echo <<<ENDHTML
 	</select><br/>
 	Type:
 	<select name="sourcetype">
@@ -45,8 +47,7 @@ EOD;
 </td>
 </tr>
 </table>
-EOD;
-	return $pagecontent;
+ENDHTML;
 
 }
 
@@ -58,51 +59,51 @@ if(!isset($_GET['action']))
 
 if($_GET['action'] == 'showlogs')
 {
-	$pagecontent .= showLogs($thispage);
+	showLogs($thispage);
 }
 elseif($_GET['action'] == 'shownicks')
 {
 	$nickdata = $thispage->getNicks();
-	$pagecontent .= "<br/><table border=1>";
+	echo "<br/><table border=1>";
 	foreach($nickdata as $nickinfo)
 	{
-		$pagecontent .= "<tr><td><a href=?action=filter&nickid=" . $nickinfo['id'] . ">" .  $nickinfo['name'] . "</a></td></tr>";
+		echo "<tr><td><a href=?action=filter&nickid=" . $nickinfo['id'] . ">" .  $nickinfo['name'] . "</a></td></tr>";
 	}
-	$pagecontent .= "</table>";
+	echo "</table>";
 }
 elseif($_GET['action'] == 'showusers')
 {
 	$userdata = $thispage->getUsers();
-	$pagecontent .= "<br/><table border=1>";
+	echo "<br/><table border=1>";
 	foreach($userdata as $userinfo)
 	{
-		$pagecontent .= "<tr><td><a href=?action=filter&userid=" . $userinfo['id'] . ">" . $userinfo['name'] . "</a></td></tr>";
+		echo "<tr><td><a href=?action=filter&userid=" . $userinfo['id'] . ">" . $userinfo['name'] . "</a></td></tr>";
 	}
-	$pagecontent .= "</table>";
+	echo "</table>";
 }
 elseif($_GET['action'] == 'showhosts')
 {
 	$hostdata = $thispage->getHosts();
-	$pagecontent .= "<br/><table border=1>";
+	echo "<br/><table border=1>";
 	foreach($hostdata as $hostinfo)
 	{
-		$pagecontent .= "<tr><td><a href=?action=filter&hostid=" . $hostinfo['id'] . ">" . $hostinfo['name'] . "</a></td></tr>";
+		echo "<tr><td><a href=?action=filter&hostid=" . $hostinfo['id'] . ">" . $hostinfo['name'] . "</a></td></tr>";
 	}
-	$pagecontent .= "</table>";
+	echo "</table>";
 }
 elseif($_GET['action'] == 'showircusers')
 {
 	$userray = $thispage->getIRCUsers();
-	$pagecontent .= "<br/><table border=1><tr><th>Nick</th><th>User</th><th>Host</th></tr>";
+	echo "<br/><table border=1><tr><th>Nick</th><th>User</th><th>Host</th></tr>";
 	foreach($userray as $s)
 	{
-		$pagecontent .= "<tr>";
-		$pagecontent .= "<td><a href=?action=filter&nickid=" . $s['nickid'] . ">" . $s['nickname'] . "</a></td>";
-		$pagecontent .= "<td><a href=?action=filter&userid=" . $s['userid'] . ">" . $s['username'] . "</a></td>";
-		$pagecontent .= "<td><a href=?action=filter&hostid=" . $s['hostid'] . ">" . $s['hostname'] . "</a></td>";
-		$pagecontent .= "</tr>";
+		echo "<tr>";
+		echo "<td><a href=?action=filter&nickid=" . $s['nickid'] . ">" . $s['nickname'] . "</a></td>";
+		echo "<td><a href=?action=filter&userid=" . $s['userid'] . ">" . $s['username'] . "</a></td>";
+		echo "<td><a href=?action=filter&hostid=" . $s['hostid'] . ">" . $s['hostname'] . "</a></td>";
+		echo "</tr>";
 	}
-	$pagecontent .= "</table>";
+	echo "</table>";
 }
 elseif( $_GET['action'] == 'logsubmit' )
 {
@@ -111,13 +112,12 @@ elseif( $_GET['action'] == 'logsubmit' )
        		isset($_POST['Name'])	)
 	{
 
-		$somestr = $thispage->readLogFile( $_FILES['logfileupload']['tmp_name'], $_FILES['logfileupload']['name'], 'irssi', $_POST['Name'], $_POST['serverid']);
-		$pagecontent .= $somestr;
-		$pagecontent .= showLogs($thispage);
+		echo $thispage->readLogFile( $_FILES['logfileupload']['tmp_name'], $_FILES['logfileupload']['name'], 'irssi', $_POST['Name'], $_POST['serverid']);
+		showLogs($thispage);
 	}
 	else
 	{
-		$pagecontent .= "Bad submit";
+		echo "Bad submit";
 	}
 }
 elseif( $_GET['action'] == 'addserver' )
@@ -125,7 +125,7 @@ elseif( $_GET['action'] == 'addserver' )
 	if (isset($_GET['servername']) && isset($_GET['serveraddr']))
 	{
 		$thispage->addServer( $_GET['servername'], $_GET['serveraddr'] );
-		$pagecontent .= "Added server";
+		echo "Added server";
 	}
 }
 elseif( $_GET['action'] == 'filter' )
@@ -151,27 +151,27 @@ elseif( $_GET['action'] == 'filter' )
 
 	$matches = $thispage->filterByID($nickid, $userid, $hostid);
 
-	$pagecontent .= "<form method=POST action='?action=genmap'>";
+	echo "<form method=POST action='?action=genmap'>";
 
-	$pagecontent .= "<table border=1><tr><th></th><th>Nick</th><th>User</th><th>Host</th><th>Activity Count</th></tr>";
+	echo "<table border=1><tr><th></th><th>Nick</th><th>User</th><th>Host</th><th>Activity Count</th></tr>";
 
 	foreach($matches as $u)
 	{
-		$pagecontent .= "<tr>";
-		$pagecontent .= "<td><input type=checkbox name='ircuserid[]' value=" . $u['ircuserid'] . "></td>";
-		$pagecontent .= "<td><a href=?action=filter&nickid=" . $u['nickid'] . ">" . $u['nickname'] . "</a></td>";
-		$pagecontent .= "<td><a href=?action=filter&userid=" . $u['userid'] . ">" . $u['username'] . "</a></td>";
-		$pagecontent .= "<td><a href=?action=filter&hostid=" . $u['hostid'] . ">" . $u['hostname'] . "</a></td>";
-		$pagecontent .= "<td>" . $u['count'] . "</td>";
+		echo "<tr>";
+		echo "<td><input type=checkbox name='ircuserid[]' value=" . $u['ircuserid'] . "></td>";
+		echo "<td><a href=?action=filter&nickid=" . $u['nickid'] . ">" . $u['nickname'] . "</a></td>";
+		echo "<td><a href=?action=filter&userid=" . $u['userid'] . ">" . $u['username'] . "</a></td>";
+		echo "<td><a href=?action=filter&hostid=" . $u['hostid'] . ">" . $u['hostname'] . "</a></td>";
+		echo "<td>" . $u['count'] . "</td>";
 	}
 
-	$pagecontent .= "</table>";
-	$pagecontent .= "<select name='maptype'>";
-	$pagecontent .= "<option value='activity'>Activity</option>";
-	$pagecontent .= "<option value='histogram'>Histogram</option>";
-	$pagecontent .= "</select>";
+	echo "</table>";
+	echo "<select name='maptype'>";
+	echo "<option value='activity'>Activity</option>";
+	echo "<option value='histogram'>Histogram</option>";
+	echo "</select>";
 
-	$pagecontent .= "<input type=submit value='Generate image'></form>";
+	echo "<input type=submit value='Generate image'></form>";
 
 }
 elseif( $_GET['action'] == 'genmap' )
@@ -184,17 +184,17 @@ elseif( $_GET['action'] == 'genmap' )
 	$len = strlen($posted);
 	$posted = substr($posted, 0, $len - 1);
 
-	$pagecontent .= "<img src=genmap.php?type=" . $_POST['maptype'] . "&ids=$posted>";
+	echo "<img src=genmap.php?type=" . $_POST['maptype'] . "&ids=$posted>";
 }
 elseif( $_GET['action'] == 'showservers' )
 { // SHOW SERVER LIST
-	$pagecontent .= "<table border=1><tr><th>Name</th><th>Address</th><th></th></tr>";
+	echo "<table border=1><tr><th>Name</th><th>Address</th><th></th></tr>";
 	$servers = $thispage->getServers();
 	foreach($servers as $row)
 	{
-		$pagecontent .= "<tr><td>" . $row['name'] . "</td><td>" . $row['address'] . "</td></tr>";
+		echo "<tr><td>" . $row['name'] . "</td><td>" . $row['address'] . "</td></tr>";
 	}
-	$pagecontent .= <<<ENDHTML
+	echo <<<ENDHTML
 <br>
 	<tr>
 		<form method=GET action="?action=addserver">
@@ -206,89 +206,82 @@ elseif( $_GET['action'] == 'showservers' )
 	</tr>
 ENDHTML;
 
-	$pagecontent .= "</table>";
+	echo "</table>";
 		
 }
 elseif( $_GET['action'] == 'search' )
 {
+	echo <<<ENDHTML
 
-	$pagecontent .= "<form method=GET>";
-	$pagecontent .= "<input type=hidden name=action value=search>";
+	<form method=GET>
+	<input type=hidden name=action value=search>
+	<table border=0>
 
-	$pagecontent .= "<table border=0>";
+	<tr><th>nick</th><th>[</th><th>user</th><th>@</th><th>host</th><th>]</th></tr>
+ENDHTML;
 
-	$pagecontent .= "<tr>";
-	$pagecontent .= "<th>nick</th>";
-	$pagecontent .= "<th>[</th>";
-	$pagecontent .= "<th>user</th>";
-	$pagecontent .= "<th>@</th>";
-	$pagecontent .= "<th>host</th>";
-	$pagecontent .= "<th>]</th>";
-	$pagecontent .= "</tr>";
+	echo "<tr>";
+	echo "<td align=middle><select name=nicksearch><option value=is ";
+	if($_GET['nicksearch'] == 'is') echo "selected";
+	echo ">is</option><option value=like ";
+	if($_GET['nicksearch'] == 'like') echo "selected";
+	echo ">like</option></td>";
+	echo "<td></td>";
+	echo "<td align=middle><select name=usersearch ";
+	if($_GET['usersearch'] == 'is') echo "selected";
+	echo "><option value=is>is</option><option value=like ";
+	if($_GET['usersearch'] == 'like') echo "selected";
+	echo ">like</option></td>";
+	echo "<td></td>";
+	echo "<td align=middle><select name=hostsearch><option value=is ";
+	if($_GET['hostsearch'] == 'is') echo "selected";
+	echo ">is</option><option value=like ";
+	if($_GET['hostsearch'] == 'like') echo "selected";
+	echo ">like</option></td>";
+	echo "<td></td>";
+	echo "</tr>";
 
+	echo "<tr>";
+	echo "<td><input type=textbox name=nickvalue value={$_GET['nickvalue']}></td>";
+	echo "<td>[</td>";
+	echo "<td><input type=textbox name=uservalue value={$_GET['uservalue']}></td>";
+	echo "<td>@</td>";
+	echo "<td><input type=texbox name=hostvalue value={$_GET['hostvalue']}></td>";
+	echo "<td>]</td>";
+	echo "</tr>";
 
-	$pagecontent .= "<tr>";
-	$pagecontent .= "<td align=middle><select name=nicksearch><option value=is ";
-	if($_GET['nicksearch'] == 'is') $pagecontent .= "selected";
-	$pagecontent .= ">is</option><option value=like ";
-	if($_GET['nicksearch'] == 'like') $pagecontent .= "selected";
-	$pagecontent .= ">like</option></td>";
-	$pagecontent .= "<td></td>";
-	$pagecontent .= "<td align=middle><select name=usersearch ";
-	if($_GET['usersearch'] == 'is') $pagecontent .= "selected";
-	$pagecontent .= "><option value=is>is</option><option value=like ";
-	if($_GET['usersearch'] == 'like') $pagecontent .= "selected";
-	$pagecontent .= ">like</option></td>";
-	$pagecontent .= "<td></td>";
-	$pagecontent .= "<td align=middle><select name=hostsearch><option value=is ";
-	if($_GET['hostsearch'] == 'is') $pagecontent .= "selected";
-	$pagecontent .= ">is</option><option value=like ";
-	if($_GET['hostsearch'] == 'like') $pagecontent .= "selected";
-	$pagecontent .= ">like</option></td>";
-	$pagecontent .= "<td></td>";
-	$pagecontent .= "</tr>";
-
-	$pagecontent .= "<tr>";
-	$pagecontent .= "<td><input type=textbox name=nickvalue value={$_GET['nickvalue']}></td>";
-	$pagecontent .= "<td>[</td>";
-	$pagecontent .= "<td><input type=textbox name=uservalue value={$_GET['uservalue']}></td>";
-	$pagecontent .= "<td>@</td>";
-	$pagecontent .= "<td><input type=texbox name=hostvalue value={$_GET['hostvalue']}></td>";
-	$pagecontent .= "<td>]</td>";
-	$pagecontent .= "</tr>";
-
-	$pagecontent .= "</table>";
+	echo "</table>";
 
 
-	$pagecontent .= "<input type=submit value=Search>";
-	$pagecontent .= "</form>";
+	echo "<input type=submit value=Search>";
+	echo "</form>";
 
 	if( ($_GET['nickvalue'] != '') || ($_GET['uservalue'] != '') || ($_GET['hostvalue'] != '') )
 	{
 		$matches = $thispage->filterByName( $_GET['nicksearch'], $_GET['usersearch'], $_GET['hostsearch'],
 			$_GET['nickvalue'], $_GET['uservalue'], $_GET['hostvalue'] );
 
-		$pagecontent .= "<form method=POST action='?action=genmap'>";
+		echo "<form method=POST action='?action=genmap'>";
 
-		$pagecontent .= "<table border=1><tr><th></th><th>Nick</th><th>User</th><th>Host</th><th>Activity Count</th></tr>";
+		echo "<table border=1><tr><th></th><th>Nick</th><th>User</th><th>Host</th><th>Activity Count</th></tr>";
 
 		foreach($matches as $u)
 		{
-			$pagecontent .= "<tr>";
-			$pagecontent .= "<td><input type=checkbox name='ircuserid[]' value=" . $u['ircuserid'] . "></td>";
-			$pagecontent .= "<td><a href=?action=filter&nickid=" . $u['nickid'] . ">" . $u['nickname'] . "</a></td>";
-			$pagecontent .= "<td><a href=?action=filter&userid=" . $u['userid'] . ">" . $u['username'] . "</a></td>";
-			$pagecontent .= "<td><a href=?action=filter&hostid=" . $u['hostid'] . ">" . $u['hostname'] . "</a></td>";
-			$pagecontent .= "<td>" . $u['count'] . "</td>";
+			echo "<tr>";
+			echo "<td><input type=checkbox name='ircuserid[]' value=" . $u['ircuserid'] . "></td>";
+			echo "<td><a href=?action=filter&nickid=" . $u['nickid'] . ">" . $u['nickname'] . "</a></td>";
+			echo "<td><a href=?action=filter&userid=" . $u['userid'] . ">" . $u['username'] . "</a></td>";
+			echo "<td><a href=?action=filter&hostid=" . $u['hostid'] . ">" . $u['hostname'] . "</a></td>";
+			echo "<td>" . $u['count'] . "</td>";
 		}
 
-		$pagecontent .= "</table>";
-		$pagecontent .= "<select name='maptype'>";
-		$pagecontent .= "<option value='activity'>Activity</option>";
-		$pagecontent .= "<option value='histogram'>Histogram</option>";
-		$pagecontent .= "</select>";
+		echo "</table>";
+		echo "<select name='maptype'>";
+		echo "<option value='activity'>Activity</option>";
+		echo "<option value='histogram'>Histogram</option>";
+		echo "</select>";
 
-		$pagecontent .= "<input type=submit value='Generate image'></form>";
+		echo "<input type=submit value='Generate image'></form>";
 	}
 
 }
@@ -297,8 +290,6 @@ else
 	//$pagecontent .= "What are you doing here?";
 }
 
-$thispage->addChildContent($pagecontent);
-
-print $thispage->getContent();
+$thispage->printFooter();
 
 ?>

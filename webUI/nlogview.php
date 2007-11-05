@@ -2,8 +2,8 @@
 require 'dbclient.php';
 
 interface webPage{
-	public function getContent();
-	public function addChildContent($value);
+	public function printHeader();
+	public function printFooter();
 }
 
 class nLogView extends dbclient implements webPage {
@@ -12,13 +12,13 @@ class nLogView extends dbclient implements webPage {
 	private $modules = array();
 	protected $db;
 
-	public function getContent(){
+	public function printHeader() {
 		$modlist = "";
 		$this->addModule('IRC');
 		foreach($this->modules as $modname){
 			$modlist = $modlist . "<td><a href=" . $modname . ">" . $modname . "</a></td>";
 		}
-		$this->html = "
+		echo <<<EOF
 			<html>
 			<head><title>nLogView</title></head>
 			<body>
@@ -28,33 +28,31 @@ class nLogView extends dbclient implements webPage {
 			<table name=modules>
 			<tr>
 			<td><b>nLogView</b> :: </td>
-			"
-			. $modlist .
-			"
+EOF;
+		echo $modlist;
+		echo <<<EOF
 			</tr>
 			</table>
 			</td>
 			</tr>
 			<tr>
 			<td>
-			"
-			. $this->childhtml .
-			"
+EOF;
+	}
+
+	public function printFooter() {
+		echo <<<EOF
 			</td>
 			</tr>
 			</table>
 			</body>
 			</html>
-			";
-		return $this->html;
+EOF;
+
 	}
 
-	public function addChildContent($value)
-	{
-		$this->childhtml .= $value;
-	}
 
-	public function addModule($modulename){
+	private function addModule($modulename){
 		$this->modules[] = $modulename;
 	}
 
