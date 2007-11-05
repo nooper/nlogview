@@ -176,15 +176,17 @@ elseif( $_GET['action'] == 'filter' )
 }
 elseif( $_GET['action'] == 'genmap' )
 { // GENERATE USER MAP
-	$ids = $_POST['ircuserid'];
-	$posted = "";
-	foreach($ids as $id){
-		$posted .= $id . ",";
-	}
-	$len = strlen($posted);
-	$posted = substr($posted, 0, $len - 1);
+	if( isset( $_POST['ircuserid'] ) ) {
+		$ids = $_POST['ircuserid'];
+		$posted = "";
+		foreach($ids as $id){
+			$posted .= $id . ",";
+		}
+		$len = strlen($posted);
+		$posted = substr($posted, 0, $len - 1);
 
-	echo "<img src=genmap.php?type=" . $_POST['maptype'] . "&ids=$posted>";
+		echo "<img src=genmap.php?type=" . $_POST['maptype'] . "&ids=$posted>";
+	}
 }
 elseif( $_GET['action'] == 'showservers' )
 { // SHOW SERVER LIST
@@ -211,6 +213,13 @@ ENDHTML;
 }
 elseif( $_GET['action'] == 'search' )
 {
+	if(!isset($_GET['nickvalue'])) $_GET['nickvalue'] = "";
+	if(!isset($_GET['hostvalue'])) $_GET['hostvalue'] = "";
+	if(!isset($_GET['uservalue'])) $_GET['uservalue'] = "";
+	if(!isset($_GET['nicksearch'])) $_GET['nicksearch'] = "";
+	if(!isset($_GET['hostsearch'])) $_GET['hostsearch'] = "";
+	if(!isset($_GET['usersearch'])) $_GET['usersearch'] = "";
+
 	echo <<<ENDHTML
 
 	<form method=GET>

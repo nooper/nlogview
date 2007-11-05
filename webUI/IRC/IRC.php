@@ -243,12 +243,12 @@ EOF;
 
 	private function getMaxFont( $maxheight, $max = 5 ) {
 		$cur = $prev = 1;
-		for( $cur = $prev; $cur <= max; $cur++ ) {
+		for( $cur = $prev; $cur <= $max; $cur++ ) {
 			if( imagefontheight($cur) > $maxheight ) {
 				return $prev;
 			}
 			else {
-				$prev = cur;
+				$prev = $cur;
 			}
 		}
 		return $cur;

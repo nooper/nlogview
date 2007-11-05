@@ -1,4 +1,7 @@
 <?php
+
+error_reporting(E_ALL);
+
 require 'dbclient.php';
 
 interface webPage{

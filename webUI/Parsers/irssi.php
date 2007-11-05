@@ -27,7 +27,6 @@ class irssiparser extends parser
 	private $logdate;
 	private $logid, $serverid, $channelid;
 
-	protected $fmtstrings = array();
 
 	function __construct()
 	{
@@ -45,7 +44,6 @@ class irssiparser extends parser
 
 	public function addInput( $localpath, $realname, $username, $formatstring = '' )
 	{
-		$this->fmtstrings[$filename] = $formatstring;
 		$this->inputs[] = array( 
 			'localpath' => $localpath,
 			'realname' => $realname,
