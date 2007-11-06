@@ -13,7 +13,7 @@ function showLogs($thispage)
 	echo "<br/><table border=1><tr><th>Name</th><th>Source</th><th>Timestamp</th></tr>";
 	foreach($logdata as $rowdata)
 	{
-		echo  "<tr><td>" . $rowdata['name'] . "</td><td>" . $rowdata['source'] . "</td><td>" . $rowdata['timestamp'] . "</td></tr>";
+		echo  "<tr><td><a href='logs.php?logid=" . $rowdata['logid'] . "'>" .  $rowdata['name'] . "</a></td><td>" . $rowdata['source'] . "</td><td>" . $rowdata['timestamp'] . "</td></tr>";
 	}
 	echo "</table>";
 

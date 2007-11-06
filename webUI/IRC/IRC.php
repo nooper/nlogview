@@ -7,22 +7,23 @@ class IRC extends nLogView
 {
 	private $html;
 	private $childhtml;
-	//protected $db;
+	private $mypath;
 
 	public function printHeader() {
 		parent::printHeader();
+		$this->mypath = $this->basepath . "IRC/index.php";
 		echo <<<EOF
 			<table>
 			<tr>
 			<td>
 			<b>IRC</b>
-			:: <a href="?action=search">Search</a>
-			| <a href="?action=showservers">Servers</a>
-			| <a href="?action=shownicks">Nicknames</a>
-			| <a href="?action=showusers">Users</a>
-			| <a href="?action=showhosts">Hosts</a> 
-			| <a href="?action=showircusers">IRC Users</a> 
-			| <a href="?action=showlogs">Logs</a>
+			:: <a href="$this->mypath?action=search">Search</a>
+			| <a href="$this->mypath?action=showservers">Servers</a>
+			| <a href="$this->mypath?action=shownicks">Nicknames</a>
+			| <a href="$this->mypath?action=showusers">Users</a>
+			| <a href="$this->mypath?action=showhosts">Hosts</a> 
+			| <a href="$this->mypath?action=showircusers">IRC Users</a> 
+			| <a href="$this->mypath?action=showlogs">Logs</a>
 			<tr><td>
 EOF;
 
@@ -47,7 +48,8 @@ EOF;
 			$logdata[] = array(
 				'name' => $row['name'],
 				'source' => $row['source'],
-				'timestamp' => $row['submittime']
+				'timestamp' => $row['submittime'],
+				'logid' => $row['logid']
 			);
 		}
 		return $logdata;

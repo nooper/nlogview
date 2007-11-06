@@ -2,7 +2,7 @@
 
 require_once('../dbclient.php');
 
-class parser extends dbclient
+abstract class parser extends dbclient
 {
 	/* Base parser class.
 	 * Each parser should extend this

@@ -13,13 +13,18 @@ class nLogView extends dbclient implements webPage {
 	private $childhtml;
 	private $html;
 	private $modules = array();
-	protected $db;
+	protected $basepath;
+
+	public function __construct() {
+		parent::__construct();
+		$this->setBasePath();
+	}
 
 	public function printHeader() {
 		$modlist = "";
 		$this->addModule('IRC');
 		foreach($this->modules as $modname){
-			$modlist = $modlist . "<td><a href=" . $modname . ">" . $modname . "</a></td>";
+			$modlist = $modlist . "<td><a href=" . $this->basepath . $modname . "/index.php>" . $modname . "</a></td>";
 		}
 		echo <<<EOF
 			<html>
@@ -57,6 +62,13 @@ EOF;
 
 	private function addModule($modulename){
 		$this->modules[] = $modulename;
+	}
+
+	protected function setBasePath() {
+		if( strlen($this->basepath) == 0 ) {
+			$pos = strpos( $_SERVER['PHP_SELF'], "/nlogview/" );
+			$this->basepath = substr( $_SERVER['PHP_SELF'], 0, $pos ) . "/nlogview/";
+		}
 	}
 
 
