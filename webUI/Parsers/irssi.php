@@ -15,7 +15,6 @@ class irssiparser extends parser
 	const ACT_NICKFROM = 5;
 	const ACT_NICKTO = 6;
 
-	private $db;
 	private $lineregex = array();
 	private $nick2ircuser = array();
 	private $nickid = array();
@@ -30,6 +29,7 @@ class irssiparser extends parser
 
 	function __construct()
 	{
+		parent::__construct(); //calls dbclient constructor to make $db
 		$t = "(\d{2}:\d{2})"; // time stamp
 		$w = "([^ ]+)"; //word
 		$this->lineregex["logopen"] = "/^--- Log opened $w $w $w $w $w$/";
@@ -54,8 +54,7 @@ class irssiparser extends parser
 
 	private function addChannel($serverid, $channelname)
 	{
-		$q = $this->db->query('SELECT channelid from nlogview_channels where serverid=? and name= ?', array($serverid, $channelname));
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		$q = $this->query('SELECT channelid from nlogview_channels where serverid=? and name= ?', array($serverid, $channelname));
 
 		if($q->numrows() == 1)
 		{
@@ -64,8 +63,7 @@ class irssiparser extends parser
 		}
 		elseif($q->numrows() == 0)
 		{
-			$q = $this->db->query('INSERT INTO nlogview_channels(serverid, name) values(?,?)', array($serverid, $channelname));
-			if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+			$q = $this->query('INSERT INTO nlogview_channels(serverid, name) values(?,?)', array($serverid, $channelname));
 			return $this->addChannel($serverid, $channelname);
 		}
 		else
@@ -83,10 +81,8 @@ class irssiparser extends parser
 
 	private function addLogRecord($name, $path)
 	{
-		$q = $this->db->query("INSERT INTO nlogview_logs(name, source) values(?,?)", array($name, $path));
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
-		$row = $this->db->query("SELECT max(logid) from nlogview_logs")->fetchrow();
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		$q = $this->query("INSERT INTO nlogview_logs(name, source) values(?,?)", array($name, $path));
+		$row = $this->query("SELECT max(logid) from nlogview_logs")->fetchrow();
 		return $row[0];
 	}
 
@@ -98,17 +94,15 @@ class irssiparser extends parser
 
 	private function insertActivity($ircuserid, $type, $time)
 	{
-		$q = $this->db->query('INSERT INTO nlogview_activity( channelid, ircuserid, logid, activitytype, activitytime ) VALUES(?,?,?,?,?)',
+		$q = $this->query('INSERT INTO nlogview_activity( channelid, ircuserid, logid, activitytype, activitytime ) VALUES(?,?,?,?,?)',
 			array($this->channelid, $ircuserid, $this->logid, $type, $time));
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo()); }
 	}
 
 	private function selectInsert($tablename, $idcolname, $valuecolname, $value)
 	{
 		$retval = 0;
 		$sql = "SELECT $idcolname FROM $tablename WHERE " . $valuecolname . " = ?";
-		$q = $this->db->query($sql, array($value));
-		if (DB::isError($q)) { die("SELECT error $sql, $valuecolname" ); }
+		$q = $this->query($sql, array($value));
 		if( $q->numrows() == 1 )
 		{
 			$row = $q->fetchrow();
@@ -117,8 +111,7 @@ class irssiparser extends parser
 		elseif( $q->numrows() == 0 )
 		{
 			$sql = "INSERT INTO $tablename($valuecolname) values(?)";
-			$q = $this->db->query($sql, array($value));
-			if (DB::isError($q)) { die("INSERT error $q->getDebugInfo()" ); }
+			$q = $this->query($sql, array($value));
 			return $this->selectInsert($tablename, $idcolname, $valuecolname, $value);
 		}
 		else
@@ -184,8 +177,7 @@ class irssiparser extends parser
 		else
 		{
 			$sql = "SELECT ircuserid FROM nlogview_ircusers WHERE nickid=$nickid AND userid=$userid AND hostid=$hostid";
-			$q = $this->db->query($sql);
-			if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+			$q = $this->query($sql);
 			if( $q->numrows() == 1 )
 			{
 				$row = $q->fetchrow();
@@ -194,8 +186,7 @@ class irssiparser extends parser
 			}
 			else
 			{
-				$q = $this->db->query("INSERT INTO nlogview_ircusers(nickid, userid, hostid) VALUES(?,?,?)", array($nickid, $userid, $hostid));
-				if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+				$q = $this->query("INSERT INTO nlogview_ircusers(nickid, userid, hostid) VALUES(?,?,?)", array($nickid, $userid, $hostid));
 				return $this->getIRCUserID($nickid, $userid, $hostid);
 			}
 		}
@@ -203,16 +194,14 @@ class irssiparser extends parser
 
 	private function setUser( $ircuserid, $user )
 	{
-		$q = $this->db->query("UPDATE nlogview_users SET name=? WHERE userid=(SELECT userid FROM nlogview_ircusers where ircuserid=?)",
+		$q = $this->query("UPDATE nlogview_users SET name=? WHERE userid=(SELECT userid FROM nlogview_ircusers where ircuserid=?)",
 			array($user, $ircuserid));
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
 	}
 
 	private function setHost( $ircuserid, $host )
 	{
-		$q = $this->db->query("UPDATE nlogview_hosts set name=? WHERE hostid=(SELECT hostid from nlogview_ircusers where ircuserid=?)",
+		$q = $this->query("UPDATE nlogview_hosts set name=? WHERE hostid=(SELECT hostid from nlogview_ircusers where ircuserid=?)",
 			array($host, $ircuserid));
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
 	}
 
 	private function retroFixup( $nick, $user, $host )
@@ -234,8 +223,7 @@ class irssiparser extends parser
 		$sql .= "SET act.ircuserid = good.ircuserid ";
 		$sql .= "WHERE act.ircuserid = bad.ircuserid AND bad.nickid = good.nickid AND ";
 		$sql .= "bad.userid=? AND bad.hostid=? AND good.userid=? AND good.hostid=?";
-		$q = $this->db->query($sql, array($olduserid, $oldhostid, $newuserid, $newhostid));
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		$q = $this->query($sql, array($olduserid, $oldhostid, $newuserid, $newhostid));
 
 		//delete rows renedered useless by above update
 		$sql = "DELETE FROM nlogview_ircusers bad ";
@@ -243,18 +231,14 @@ class irssiparser extends parser
 		$sql .= "WHERE bad.nickid = good.nickid ";
 		$sql .= "AND bad.userid=? and bad.hostid=? ";
 		$sql .= "AND good.userid=? and good.hostid=? ";
-		$q = $this->db->query($sql, array($olduserid, $oldhostid, $newuserid, $newhostid));
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		$q = $this->query($sql, array($olduserid, $oldhostid, $newuserid, $newhostid));
 
-		$q = $this->db->query("UPDATE nlogview_ircusers SET userid=?, hostid=? WHERE userid=? AND hostid=?",
+		$q = $this->query("UPDATE nlogview_ircusers SET userid=?, hostid=? WHERE userid=? AND hostid=?",
 			array($newuserid, $newhostid, $olduserid, $oldhostid));
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
 
-		$q = $this->db->query("DELETE FROM nlogview_users where userid=?", array($olduserid));
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		$q = $this->query("DELETE FROM nlogview_users where userid=?", array($olduserid));
 
-		$q = $this->db->query("DELETE FROM nlogview_hosts where hostid=?", array($oldhostid));
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		$q = $this->query("DELETE FROM nlogview_hosts where hostid=?", array($oldhostid));
 	}
 
 	private function event_msg( $match )
@@ -430,24 +414,20 @@ class irssiparser extends parser
 		$sql .= "FROM nlogview_channels old ";
 		$sql .= "INNER JOIN nlogview_channels new ON new.channelid=? AND new.channelid <> old.channelid ";
 		$sql .= "WHERE old.name=?";
-		$q = $this->db->query($sql, array($channelid, $channelname));
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		$q = $this->query($sql, array($channelid, $channelname));
 		if($q->numRows() > 0)
 		{
 			$row = $q->fetchrow();
 			$oldchannelid = $row[0];
 			$sql = "UPDATE nlogview_activity SET channelid = $oldchannelid WHERE channelid = $channelid";
-			$q = $this->db->query($sql);
-			if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+			$q = $this->query($sql);
 			$sql = "DELETE FROM nlogview_channels WHERE channelid = $channelid";
-			$q = $this->db->query($sql);
-			if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+			$q = $this->query($sql);
 		}
 		else
 		{
 			$sql = "UPDATE nlogview_channels SET name=? WHERE channelid=?";
-			$q = $this->db->query($sql, array($channelname, $channelid));
-			if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+			$q = $this->query($sql, array($channelname, $channelid));
 		}
 	}
 
@@ -502,16 +482,15 @@ class irssiparser extends parser
 		$this->setChannelName( $this->channelid, $channelname );
 	}
 
-	public function writeToDB( $db, $serverid )
+	public function writeToDB( $serverid )
 	{
-		$this->db = $db;
-		$this->db->query("START TRANSACTION");
+		$this->query("START TRANSACTION");
 		$this->serverid = $serverid;
 		foreach($this->inputs as $singlefile)
 		{
 			$this->singleFileToDB( $singlefile['localpath'], $singlefile['username'], $singlefile['realname'] );
 		}
-		$this->db->query("COMMIT");
+		$this->query("COMMIT");
 	}
 }
 

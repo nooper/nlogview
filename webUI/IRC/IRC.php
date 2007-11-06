@@ -7,7 +7,7 @@ class IRC extends nLogView
 {
 	private $html;
 	private $childhtml;
-	protected $db;
+	//protected $db;
 
 	public function printHeader() {
 		parent::printHeader();
@@ -41,7 +41,7 @@ EOF;
 	public function getLogs()
 	{
 		$logdata = array();
-		$q = $this->db->query('SELECT * FROM nlogview_logs ORDER BY submittime DESC');
+		$q = $this->query('SELECT * FROM nlogview_logs ORDER BY submittime DESC');
 		while($row = $q->fetchRow(DB_FETCHMODE_ASSOC))
 		{
 			$logdata[] = array(
@@ -56,7 +56,7 @@ EOF;
 	public function getNicks()
 	{
 		$nickdata = array();
-		$q = $this->db->query("SELECT * FROM nlogview_nicks");
+		$q = $this->query("SELECT * FROM nlogview_nicks");
 		while($row = $q->fetchRow(DB_FETCHMODE_ASSOC))
 		{
 			$nickdata[] = array(
@@ -70,7 +70,7 @@ EOF;
 	public function getUsers()
 	{
 		$userdata = array();
-		$q = $this->db->query("SELECT * from nlogview_users");
+		$q = $this->query("SELECT * from nlogview_users");
 		while($row = $q->fetchRow(DB_FETCHMODE_ASSOC))
 		{
 			$userdata[] = array(
@@ -84,7 +84,7 @@ EOF;
 	public function getHosts()
 	{
 		$hostdata = array();
-		$q = $this->db->query("SELECT * from nlogview_hosts");
+		$q = $this->query("SELECT * from nlogview_hosts");
 		while($row = $q->fetchRow(DB_FETCHMODE_ASSOC))
 		{
 			$hostdata[] = array(
@@ -103,8 +103,7 @@ EOF;
 				"inner join nlogview_nicks nick ON i.nickid = nick.nickid " .
 				"inner join nlogview_users user on i.userid = user.userid " .
 				"inner join nlogview_hosts host on i.hostid = host.hostid ";
-		$q = $this->db->query($sql);
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		$q = $this->query($sql);
 		while($row = $q->fetchRow(DB_FETCHMODE_ASSOC))
 		{
 			$ray[] = array(
@@ -123,7 +122,7 @@ EOF;
 	public function getServers()
 	{
 		$serverdata = array();
-		$q = $this->db->query('SELECT * FROM nlogview_servers');
+		$q = $this->query('SELECT * FROM nlogview_servers');
 		while($row = $q->fetchRow(DB_FETCHMODE_ASSOC))
 		{
 			$serverdata[] = array(
@@ -137,33 +136,35 @@ EOF;
 
 	public function addServer($name, $address)
 	{
-		$q = $this->db->query('INSERT INTO nlogview_servers (name, address) values (?,?)', array($name, $address));
+		$q = $this->query('INSERT INTO nlogview_servers (name, address) values (?,?)', array($name, $address));
 	}
 
 	public function filterByID($nickid = 0, $userid = 0, $hostid = 0)
 	{ // returns array of ircuserids with ircuser data
-		$sql = "SELECT n.name nickname, u.name username, h.name hostname, i.ircuserid, i.nickid, i.userid, i.hostid, count(a.activityid) c ";
-		$sql .= "FROM nlogview_ircusers i ";
-		$sql .= "INNER JOIN nlogview_nicks n ON i.nickid = n.nickid ";
-		$sql .= "INNER JOIN nlogview_users u ON i.userid = u.userid ";
-		$sql .= "INNER JOIN nlogview_hosts h ON i.hostid = h.hostid ";
-		$sql .= "INNER JOIN nlogview_activity a ON i.ircuserid = a.ircuserid ";
-		if($nickid > 0)
-		{
-			$sql .= " WHERE i.nickid = $nickid ";
-		}
-		if($userid > 0)
-		{
-			$sql .= " WHERE i.userid = $userid ";
-		}
-		if($hostid > 0)
-		{
-			$sql .= " WHERE i.hostid = $hostid ";
-		}
-		$sql .= "GROUP BY i.ircuserid ";
-		$sql .= "ORDER BY count(a.activityid) DESC";
+		if( is_numeric($nickid) && is_numeric($userid) && is_numeric($hostid) ) {
+			$sql = "SELECT n.name nickname, u.name username, h.name hostname, i.ircuserid, i.nickid, i.userid, i.hostid, count(a.activityid) c ";
+			$sql .= "FROM nlogview_ircusers i ";
+			$sql .= "INNER JOIN nlogview_nicks n ON i.nickid = n.nickid ";
+			$sql .= "INNER JOIN nlogview_users u ON i.userid = u.userid ";
+			$sql .= "INNER JOIN nlogview_hosts h ON i.hostid = h.hostid ";
+			$sql .= "INNER JOIN nlogview_activity a ON i.ircuserid = a.ircuserid ";
+			if($nickid > 0)
+			{
+				$sql .= " WHERE i.nickid = $nickid ";
+			}
+			if($userid > 0)
+			{
+				$sql .= " WHERE i.userid = $userid ";
+			}
+			if($hostid > 0)
+			{
+				$sql .= " WHERE i.hostid = $hostid ";
+			}
+			$sql .= "GROUP BY i.ircuserid ";
+			$sql .= "ORDER BY count(a.activityid) DESC";
 
-		return $this->filterSQL2Array($sql);
+			return $this->filterSQL2Array($sql);
+		}
 	}
 
 	public function filterByName($nicktype, $usertype, $hosttype, $nickname = '', $username = '', $hostname = '')
@@ -175,23 +176,37 @@ EOF;
 		$sql .= "INNER JOIN nlogview_hosts h ON i.hostid = h.hostid ";
 		$sql .= "INNER JOIN nlogview_activity a ON i.ircuserid = a.ircuserid WHERE ";
 
+		$data = array();
+
 		if( strlen($nickname) > 0 ) {
-			if( $nicktype == 'is' )
-				$filter[] = " n.name = '$nickname' ";
-			elseif( $nicktype == 'like' )
-				$filter[] = " n.name like '%$nickname%' ";
+			if( $nicktype == 'is' ) {
+				$filter[] = " n.name = ? ";
+				$data[] = $nickname;
+			}
+			elseif( $nicktype == 'like' ) {
+				$filter[] = " n.name like ? ";
+				$data[] = "%" . $nickname . "%";
+			}
 		}
 		if( strlen($username) > 0 ) {
-			if( $usertype == 'is' )
-				$filter[] = " u.name = '$username' ";
-			elseif( $usertype == 'like' )
-				$filter[] = " u.name like '%$username%' ";
+			if( $usertype == 'is' ) {
+				$filter[] = " u.name = ? ";
+				$data[] = $username;
+			}
+			elseif( $usertype == 'like' ) {
+				$filter[] = " u.name like ? ";
+				$data[] = "%" . $username . "%";
+			}
 		}
 		if( strlen($hostname) > 0 ) {
-			if( $hosttype == 'is' )
-				$filter[] = " h.name = '$hostname' ";
-			elseif( $hosttype == 'like' )
-				$filter[] = " h.name like '%$hostname%' ";
+			if( $hosttype == 'is' ) {
+				$filter[] = " h.name = ? ";
+				$data[] = $hostname;
+			}
+			elseif( $hosttype == 'like' ) {
+				$filter[] = " h.name like ? ";
+				$data[] = "%" . $hostname . "%";
+			}
 		}
 		
 		foreach( $filter as $cond ) {
@@ -203,12 +218,11 @@ EOF;
 		$sql .= "GROUP BY i.ircuserid ";
 		$sql .= "ORDER BY count(a.activityid) DESC";
 
-		return $this->filterSQL2Array($sql);
+		return $this->filterSQL2Array($sql, $data);
 	}
 
-	private function filterSQL2Array( $sql ) {
-		$q = $this->db->query($sql);
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+	private function filterSQL2Array( $sql, $data = array() ) {
+		$q = $this->query($sql, $data);
 		$retval = array();
 		while($row = $q->fetchRow(DB_FETCHMODE_ASSOC))
 		{
@@ -237,7 +251,7 @@ EOF;
 		{
 			$parser = new irssiparser;
 			$parser->addInput($path, $realname, $name);
-			$parser->writeToDB( $this->db, $serverid );
+			$parser->writeToDB( $serverid );
 		}
 	}
 
@@ -266,9 +280,8 @@ EOF;
 		//Get first and last date for image map
 		$sql = "select $celltime * round(unix_timestamp(min(activitytime))/$celltime), $celltime * round(unix_timestamp(max(activitytime))/$celltime) ";
 		$sql .= "from nlogview_activity ";
-		$sql .= "where ircuserid in ($userids)";
-		$q = $this->db->query($sql);
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		$sql .= "where ircuserid in (?)";
+		$q = $this->query($sql, array($userids));
 		$row = $q->fetchrow();
 		$unix_begin_time = mktime(0, 0, 0, date('m', $row[0]), date('d', $row[0]), date('Y', $row[0]));
 		$unix_end_time = $row[1];
@@ -283,13 +296,13 @@ EOF;
 		$blue = imagecolorallocate($image, 0, 0, 255);
 		$white = imagecolorallocate($image, 255, 255, 255);
 
-		$sql = "select round(log($logbase,count(activityid)))+1, $celltime * round(unix_timestamp(activitytime) / $celltime) ";
+		$sql = "select round(log(?,count(activityid)))+1, ? * round(unix_timestamp(activitytime) / ?) ";
 		$sql .= "from nlogview_activity ";
-		$sql .= "where ircuserid in ($userids) ";
-		$sql .= "group by round(unix_timestamp(activitytime)/$celltime) ";
-		$sql .= "order by round(unix_timestamp(activitytime)/$celltime)";
-		$q = $this->db->query($sql);
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		$sql .= "where ircuserid in (?) ";
+		$sql .= "group by round(unix_timestamp(activitytime)/?) ";
+		$sql .= "order by round(unix_timestamp(activitytime)/?)";
+		$data = array( $logbase, $celltime, $celltime, $userids, $celltime, $celltime);
+		$q = $this->query($sql, $data);
 		$mid = $cellheight / 2;
 		$now = $unix_begin_time;
 		$date_y_offset = ( $cellheight - imagefontheight($font) ) / 2;
@@ -314,14 +327,14 @@ EOF;
 
 	public function getHistogram ( $userids, $interval = 3600 ) {
 		$sql = "select c, count(c) from ";
-		$sql .= "( select count(activityid) c, $interval * round(unix_timestamp(activitytime) / $interval) time ";
+		$sql .= "( select count(activityid) c, ? * round(unix_timestamp(activitytime) / ?) time ";
 		$sql .= "from nlogview_activity ";
-		$sql .= "where ircuserid in ( $userids ) ";
-		$sql .= "group by round(unix_timestamp(activitytime) / $interval) ) o ";
+		$sql .= "where ircuserid in ( ? ) ";
+		$sql .= "group by round(unix_timestamp(activitytime) / ?) ) o ";
 		$sql .= "group by c ";
 		$sql .= "order by c";
-		$q = $this->db->query($sql);
-		if (DB::isError($q)) { die("SQL Error: " . $q->getDebugInfo( )); }
+		$data = array( $interval, $interval, $userids, $interval );
+		$q = $this->query($sql, $data);
 		while($row = $q->fetchrow()){
 			$lines[$row[0]] = $row[1];
 			$total += $row[1];

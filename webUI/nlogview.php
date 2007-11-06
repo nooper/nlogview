@@ -2,7 +2,7 @@
 
 error_reporting(E_ALL);
 
-require 'dbclient.php';
+require_once('dbclient.php');
 
 interface webPage{
 	public function printHeader();
