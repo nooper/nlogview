@@ -272,6 +272,14 @@ EOF;
 
 	public function getActivityMap( $userids, $cellheight = 11, $cellwidth = 1, $celltime = 120, $cellsperrow = 0, $logbase = 2 ) {
 
+		// first, ensure input is clean
+		$idarray = explode( ",", $userids );
+		foreach( $idarray as $tempid ) {
+			if ( !is_numeric( $tempid ) ) {
+				die("Bad input to IRC::getActvitiyMap()");
+			}
+		}
+
 		if ( $cellsperrow == 0 ) {
 			$cellsperrow = 86400 / $celltime; //default to 1 day = 1 row
 		}
@@ -282,8 +290,8 @@ EOF;
 		//Get first and last date for image map
 		$sql = "select $celltime * round(unix_timestamp(min(activitytime))/$celltime), $celltime * round(unix_timestamp(max(activitytime))/$celltime) ";
 		$sql .= "from nlogview_activity ";
-		$sql .= "where ircuserid in (?)";
-		$q = $this->query($sql, array($userids));
+		$sql .= "where ircuserid in ($userids)";
+		$q = $this->query($sql);
 		$row = $q->fetchrow();
 		$unix_begin_time = mktime(0, 0, 0, date('m', $row[0]), date('d', $row[0]), date('Y', $row[0]));
 		$unix_end_time = $row[1];
@@ -300,10 +308,10 @@ EOF;
 
 		$sql = "select round(log(?,count(activityid)))+1, ? * round(unix_timestamp(activitytime) / ?) ";
 		$sql .= "from nlogview_activity ";
-		$sql .= "where ircuserid in (?) ";
+		$sql .= "where ircuserid in ($userids) ";
 		$sql .= "group by round(unix_timestamp(activitytime)/?) ";
 		$sql .= "order by round(unix_timestamp(activitytime)/?)";
-		$data = array( $logbase, $celltime, $celltime, $userids, $celltime, $celltime);
+		$data = array( $logbase, $celltime, $celltime, $celltime, $celltime);
 		$q = $this->query($sql, $data);
 		$mid = $cellheight / 2;
 		$now = $unix_begin_time;
