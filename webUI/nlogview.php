@@ -16,7 +16,6 @@ class nLogView extends dbclient implements webPage {
 	protected $basepath;
 
 	public function __construct() {
-		parent::__construct();
 		$this->setBasePath();
 	}
 

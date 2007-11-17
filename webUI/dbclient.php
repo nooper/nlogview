@@ -5,12 +5,12 @@ require_once('DB.php');
 class dbclient {
 	private $db; 
 
-	public function __construct()
+	private function connect()
 	{
-		$dbhost="";
-		$dbname="";
-		$dbuser="";
-		$dbpass="";
+		$dbhost="localhost";
+		$dbname="nooper";
+		$dbuser="nooper";
+		$dbpass="nothing";
 
 		$sqlstr = "mysql://$dbuser:$dbpass@$dbhost/$dbname";
 		$this->db = DB::connect($sqlstr);
@@ -18,6 +18,8 @@ class dbclient {
 	}
 
 	public function query( $sql, $data = array() ) {
+		if(is_null($this->db))
+			$this->connect();
 		$q = $this->db->query($sql, $data);
 		if (DB::isError($q)) { 
 			die("SQL Error: " . $q->getDebugInfo( )); 
