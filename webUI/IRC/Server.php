@@ -33,4 +33,15 @@ class Server extends IRC {
 		$row = $q->fetchrow();
 		return $row[0];
 	}
+
+	public function getChannels() {
+		$q = $this->query("SELECT channelid, name FROM nlogview_channels WHERE serverid = ?", $this->serverid);
+		$channels = array();
+		while( $row = $q->fetchrow() ) {
+			$channels[] = array( 'id' => $row[0],
+					'name' => $row[1]
+				);
+		}
+		return $channels;
+	}
 }
