@@ -27,19 +27,22 @@ foreign key (serverid) references nlogview_servers(serverid)
 create table nlogview_nicks
 (
 nickid int unsigned auto_increment primary key,
-name varchar(255) not null
+name varchar(255) not null,
+index (name)
 ) engine=innodb;
 
 create table nlogview_users
 (
 userid int unsigned auto_increment primary key,
-name varchar(255) not null
+name varchar(255) not null,
+index (name)
 ) engine=innodb;
 
 create table nlogview_hosts
 (
 hostid int unsigned auto_increment primary key,
-name varchar(255) not null
+name varchar(255) not null,
+index (name)
 ) engine=innodb;
 
 create table nlogview_ircusers
@@ -81,3 +84,8 @@ foreign key (ircuserid) references nlogview_ircusers(ircuserid),
 foreign key (logid) references nlogview_logs(logid)
 ) engine=innodb;
 
+create table nlogview_static
+(
+keyname varchar(255) primary key,
+value int
+) engine=innodb;
