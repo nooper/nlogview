@@ -38,6 +38,7 @@ class irssiparser extends parser
 		$this->lineregex["part"] = "/^$t -!- $w \[$w@$w\] has left $w/";
 		$this->lineregex["nickchange"] = "/^$t -!- $w is now known as $w\n$/";
 		$this->lineregex["msg"] = "/^$t <.$w>/";
+		$this->lineregex["emote"] = "/^$t  \* $w/";
 		$this->lineregex["daychange"] = "/--- Day changed $w $w $w $w$/";
 	}
 
@@ -442,6 +443,10 @@ class irssiparser extends parser
 			$line = fgets($filehandle);
 			$match = array();
 			if( preg_match( $this->lineregex["msg"], $line, $match ) )
+			{
+				$this->event_msg( $match );
+			}
+			elseif( preg_match( $this->lineregex["emote"], $line, $match ) )
 			{
 				$this->event_msg( $match );
 			}
