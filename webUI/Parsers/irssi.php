@@ -29,7 +29,6 @@ class irssiparser extends parser
 
 	function __construct()
 	{
-		parent::__construct(); //calls dbclient constructor to make $db
 		$t = "(\d{2}:\d{2})"; // time stamp
 		$w = "([^ ]+)"; //word
 		$this->lineregex["logopen"] = "/^--- Log opened $w $w $w $w $w$/";
@@ -433,6 +432,7 @@ class irssiparser extends parser
 
 	private function singleFileToDB( $path, $username, $realname )
 	{ // returns channelname
+		$channelname = "";
 		$this->channelid = $this->addChannel( $this->serverid, "newchannel" );
 		$this->logid = $this->addLogRecord( $username, $realname );
 		$filehandle = gzopen( $path, "r" );

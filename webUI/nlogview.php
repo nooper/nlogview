@@ -27,7 +27,10 @@ class nLogView extends dbclient implements webPage {
 		}
 		echo <<<EOF
 			<html>
-			<head><title>nLogView</title></head>
+			<head>
+			<title>nLogView</title>
+			<script type="text/javascript" src=$this->basepath/general.js></script>
+			</head>
 			<body>
 			<table border=1 width=100% name=wholepage>
 			<tr>

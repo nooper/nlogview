@@ -19,10 +19,6 @@ class IRC extends nLogView
 			<b>IRC</b>
 			:: <a href="$this->mypath?action=search">Search</a>
 			| <a href="$this->mypath?action=showservers">Servers</a>
-			| <a href="$this->mypath?action=shownicks">Nicknames</a>
-			| <a href="$this->mypath?action=showusers">Users</a>
-			| <a href="$this->mypath?action=showhosts">Hosts</a> 
-			| <a href="$this->mypath?action=showircusers">IRC Users</a> 
 			| <a href="$this->mypath?action=showlogs">Logs</a>
 			<tr><td>
 EOF;

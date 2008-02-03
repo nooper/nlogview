@@ -3,7 +3,6 @@
 include('IRC.php');
 
 $thispage = new IRC;
-$pagecontent = "";
 
 $thispage->printHeader();
 
@@ -128,52 +127,6 @@ elseif( $_GET['action'] == 'addserver' )
 		echo "Added server";
 	}
 }
-elseif( $_GET['action'] == 'filter' )
-{
-	$nickid = 0;
-	$userid = 0;
-	$hostid = 0;
-
-	if(isset($_GET['nickid']))
-	{
-		$nickid = $_GET['nickid'];
-	}
-
-	if(isset($_GET['userid']))
-	{
-		$userid = $_GET['userid'];
-	}
-
-	if(isset($_GET['hostid']))
-	{
-		$hostid = $_GET['hostid'];
-	}
-
-	$matches = $thispage->filterByID($nickid, $userid, $hostid);
-
-	echo "<form method=POST action='?action=genmap'>";
-
-	echo "<table border=1><tr><th></th><th>Nick</th><th>User</th><th>Host</th><th>Activity Count</th></tr>";
-
-	foreach($matches as $u)
-	{
-		echo "<tr>";
-		echo "<td><input type=checkbox name='ircuserid[]' value=" . $u['ircuserid'] . "></td>";
-		echo "<td><a href=?action=filter&nickid=" . $u['nickid'] . ">" . $u['nickname'] . "</a></td>";
-		echo "<td><a href=?action=filter&userid=" . $u['userid'] . ">" . $u['username'] . "</a></td>";
-		echo "<td><a href=?action=filter&hostid=" . $u['hostid'] . ">" . $u['hostname'] . "</a></td>";
-		echo "<td>" . $u['count'] . "</td>";
-	}
-
-	echo "</table>";
-	echo "<select name='maptype'>";
-	echo "<option value='activity'>Activity</option>";
-	echo "<option value='histogram'>Histogram</option>";
-	echo "</select>";
-
-	echo "<input type=submit value='Generate image'></form>";
-
-}
 elseif( $_GET['action'] == 'genmap' )
 { // GENERATE USER MAP
 	if( isset( $_POST['ircuserid'] ) ) {
@@ -234,19 +187,19 @@ ENDHTML;
 	if($_GET['nicksearch'] == 'is') echo "selected";
 	echo ">is</option><option value=like ";
 	if($_GET['nicksearch'] == 'like') echo "selected";
-	echo ">like</option></td>";
+	echo ">like</option></select></td>";
 	echo "<td></td>";
 	echo "<td align=middle><select name=usersearch ";
 	if($_GET['usersearch'] == 'is') echo "selected";
 	echo "><option value=is>is</option><option value=like ";
 	if($_GET['usersearch'] == 'like') echo "selected";
-	echo ">like</option></td>";
+	echo ">like</option></select></td>";
 	echo "<td></td>";
 	echo "<td align=middle><select name=hostsearch><option value=is ";
 	if($_GET['hostsearch'] == 'is') echo "selected";
 	echo ">is</option><option value=like ";
 	if($_GET['hostsearch'] == 'like') echo "selected";
-	echo ">like</option></td>";
+	echo ">like</option></select></td>";
 	echo "<td></td>";
 	echo "</tr>";
 
@@ -270,18 +223,20 @@ ENDHTML;
 		$matches = $thispage->filterByName( $_GET['nicksearch'], $_GET['usersearch'], $_GET['hostsearch'],
 			$_GET['nickvalue'], $_GET['uservalue'], $_GET['hostvalue'] );
 
-		echo "<form method=POST action='?action=genmap'>";
+		echo "<form method=POST action='?action=genmap' name='matches'>";
 
-		echo "<table border=1><tr><th></th><th>Nick</th><th>User</th><th>Host</th><th>Activity Count</th></tr>";
+		echo "<table border=1>\n";
+		echo "<tr><th><input type=checkbox name=mastercheck onClick='checkAll(document.matches, \"ircuserid[]\", document.matches.mastercheck)'></th>\n";
+		echo "<th>Nick</th><th>User</th><th>Host</th><th>Activity Count</th></tr>\n";
 
 		foreach($matches as $u)
 		{
 			echo "<tr>";
 			echo "<td><input type=checkbox name='ircuserid[]' value=" . $u['ircuserid'] . "></td>";
-			echo "<td><a href=?action=filter&nickid=" . $u['nickid'] . ">" . $u['nickname'] . "</a></td>";
-			echo "<td><a href=?action=filter&userid=" . $u['userid'] . ">" . $u['username'] . "</a></td>";
-			echo "<td><a href=?action=filter&hostid=" . $u['hostid'] . ">" . $u['hostname'] . "</a></td>";
-			echo "<td>" . $u['count'] . "</td>";
+			echo "<td><a href=?action=search&nicksearch=is&nickvalue=" . $u['nickname'] . ">" . $u['nickname'] . "</a></td>";
+			echo "<td><a href=?action=search&usersearch=is&uservalue=" . $u['username'] . ">" . $u['username'] . "</a></td>";
+			echo "<td><a href=?action=search&hostsearch=is&hostvalue=" . $u['hostname'] . ">" . $u['hostname'] . "</a></td>";
+			echo "<td>" . $u['count'] . "</td>\n";
 		}
 
 		echo "</table>";
@@ -296,7 +251,6 @@ ENDHTML;
 }
 else
 {
-	//$pagecontent .= "What are you doing here?";
 }
 
 $thispage->printFooter();
