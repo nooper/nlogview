@@ -1,20 +1,29 @@
 package require mysqltcl
 
+set dbhost "HOSTNAME"
+set dbuser "USERNAME"
+set dbpass "PASSWORD"
+set dbname "DATABASE NAME"
 
-bind pub - "connect" doconnect
-proc doconnect { nick uh handle chan thetext } {
-	mysql_connect "HOSTNAME" "USERNAME" "PASSWORD" "DATABASE";
-}
+global statics;
 
-proc mysql_connect { host user pass db } {
-	global db_handle;
-	set db_handle [mysqlconnect -host $host -user $user -password $pass -db $db];
-	putmsg "#sdf" $db_handle;
+proc dbconnect { } {
+	global db_handle dbhost dbuser dbpass dbname statics
+	if { ![info exists statics(dbconnection)] } {
+		set db_handle [mysqlconnect -host $dbhost -user $dbuser -password $dbpass -db $dbname];
+		set statics(dbconnection) 1
+	}
 }
+dbconnect
 
 bind pubm - * event_pub
 proc event_pub { nick uh handle chan thetext } {
 	insert_event $nick $uh $chan 1;
+}
+
+bind ctcp - ACTION event_act
+proc event_act { nick uh handle dest keyword thetext } {
+	insert_event $nick $uh $dest 1;
 }
 
 bind join - * event_join
@@ -55,46 +64,61 @@ proc insert_event { nick uh chan activitytype } {
 }
 
 proc getChannelID { name serverid } {
-	global db_handle
-	set sql "SELECT channelid FROM nlogview_channels WHERE serverid=$serverid AND name='$name'";
-	set result [mysqlquery $db_handle $sql];
-	set row [mysqlnext $result];
-	if { $row == "" } {
-		set sql "INSERT INTO nlogview_channels(serverid, name) VALUES($serverid, '$name')";
-		mysqlexec $db_handle $sql;
-		set retval [mysqlinsertid $db_handle];
+	global db_handle statics
+	if { [info exists statics($name)] } {
+		set retval $statics($name);
 	} else {
-		set retval [lindex $row 0]
+		set sql "SELECT channelid FROM nlogview_channels WHERE serverid=$serverid AND name='$name'";
+		set result [mysqlquery $db_handle $sql];
+		set row [mysqlnext $result];
+		if { $row == "" } {
+			set sql "INSERT INTO nlogview_channels(serverid, name) VALUES($serverid, '$name')";
+			mysqlexec $db_handle $sql;
+			set retval [mysqlinsertid $db_handle];
+		} else {
+			set retval [lindex $row 0]
+		}
+		set statics($name) $retval;
 	}
 	return $retval;
 }
 
 proc getServerID { } {
-	global db_handle server serveraddress
-	set sql "SELECT serverid FROM nlogview_servers WHERE name='$server' AND address='$serveraddress'";
-	set result [mysqlquery $db_handle $sql];
-	set row [mysqlnext $result];
-	if { $row == "" } {
-		set sql "INSERT INTO nlogview_servers(name, address) VALUES('$server', '$serveraddress')";
-		mysqlexec $db_handle $sql;
-		set retval [mysqlinsertid $db_handle];
+	global db_handle server serveraddress statics;
+	if { [info exists statics(serverid)] } {
+		set retval $statics(serverid)
 	} else {
-		set retval [lindex $row 0];
+		set sql "SELECT serverid FROM nlogview_servers WHERE name='$server' AND address='$serveraddress'";
+		set result [mysqlquery $db_handle $sql];
+		set row [mysqlnext $result];
+		if { $row == "" } {
+			set sql "INSERT INTO nlogview_servers(name, address) VALUES('$server', '$serveraddress')";
+			mysqlexec $db_handle $sql;
+			set retval [mysqlinsertid $db_handle];
+		} else {
+			set retval [lindex $row 0];
+		}
+		set statics(serverid) $retval;
 	}
 	return $retval;
 }
 
 proc getLogID { } {
-	global db_handle botname
-	set sql "SELECT logid FROM nlogview_logs WHERE name='$botname' AND source='eggdrop'";
-	set result [mysqlquery $db_handle $sql];
-	set row [mysqlnext $result];
-	if { $row == "" } {
-		set sql "INSERT INTO nlogview_logs(name, source, submittime, position, logtype) VALUES('$botname', 'eggdrop', now(), 0, 2)";
-		mysqlexec $db_handle $sql;
-		set retval [mysqlinsertid $db_handle];
+	global db_handle botname statics
+	if { [info exists statics(logid)] } {
+		set retval $statics(logid)
 	} else {
-		set retval [lindex $row 0];
+		set sql "SELECT logid FROM nlogview_logs WHERE name='$botname' AND source='eggdrop'";
+		set result [mysqlquery $db_handle $sql];
+		set row [mysqlnext $result];
+		if { $row == "" } {
+			set sql "INSERT INTO nlogview_logs(name, source, submittime, position, logtype) VALUES('$botname', 'eggdrop', now(), 0, 2)";
+			mysqlexec $db_handle $sql;
+			set retval [mysqlinsertid $db_handle];
+		} else {
+			set retval [lindex $row 0];
+		}
+		set statics(logid) $retval;
 	}
 	return $retval;
 }
@@ -116,22 +140,27 @@ proc getNUHid { lookup tablename idcolname } {
 }
 
 proc getIRCUserID { nick uh } {
-	global db_handle;
-	set uhsplit [split $uh @]
-	set user [lindex $uhsplit 0]
-	set host [lindex $uhsplit 1]
-	set nickid [getNUHid $nick "nlogview_nicks" "nickid"];
-	set userid [getNUHid $user "nlogview_users" "userid"];
-	set hostid [getNUHid $host "nlogview_hosts" "hostid"];
-	set sql "SELECT ircuserid FROM nlogview_ircusers WHERE nickid = $nickid AND userid = $userid AND hostid = $hostid";
-	set result [mysqlquery $db_handle $sql]
-	set row [mysqlnext $result]
-	if { $row == "" } {
-		set sql "INSERT INTO nlogview_ircusers(nickid, userid, hostid) VALUES( $nickid, $userid, $hostid )";
-		mysqlexec $db_handle $sql;
-		set retval [mysqlinsertid $db_handle];
+	global db_handle statics;
+	if { [info exists statics($nick$uh)] } {
+		set retval $statics($nick$uh);
 	} else {
-		set retval [lindex $row 0];
+		set uhsplit [split $uh @]
+		set user [lindex $uhsplit 0]
+		set host [lindex $uhsplit 1]
+		set nickid [getNUHid $nick "nlogview_nicks" "nickid"];
+		set userid [getNUHid $user "nlogview_users" "userid"];
+		set hostid [getNUHid $host "nlogview_hosts" "hostid"];
+		set sql "SELECT ircuserid FROM nlogview_ircusers WHERE nickid = $nickid AND userid = $userid AND hostid = $hostid";
+		set result [mysqlquery $db_handle $sql]
+		set row [mysqlnext $result]
+		if { $row == "" } {
+			set sql "INSERT INTO nlogview_ircusers(nickid, userid, hostid) VALUES( $nickid, $userid, $hostid )";
+			mysqlexec $db_handle $sql;
+			set retval [mysqlinsertid $db_handle];
+		} else {
+			set retval [lindex $row 0];
+		}
+		set statics($nick$uh) $retval;
 	}
 	return $retval;
 }
