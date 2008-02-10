@@ -33,23 +33,31 @@ proc event_join { nick uh handle chan } {
 
 bind part - * event_part
 proc event_part { nick uh handle chan msg } {
+	global statics
 	insert_event $nick $uh $chan 3;
+	unset statics($nick$uh);
 }
 
 bind sign - * event_quit
 proc event_quit { nick uh handle chan reason } {
+	global statics
 	insert_event $nick $uh $chan 4;
+	unset statics($nick$uh);
 }
 
 bind nick - * event_nickchange
 proc event_nickchange { nick uh handle chan newnick } {
+	global statics
 	insert_event $nick $uh $chan 5;
 	insert_event $newnick $uh $chan 6;
+	unset statics($nick$uh);
 }
 
 bind kick - * event_kick
 proc event_kick { nick uh handle chan target reason } {
+	global statics
 	insert_event $nick $uh $chan 7;
+	unset statics($nick$uh);
 }
 
 proc insert_event { nick uh chan activitytype } {
