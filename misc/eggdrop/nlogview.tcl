@@ -66,8 +66,7 @@ proc insert_event { nick uh chan activitytype } {
 	set serverid [getServerID]
 	set channelid [getChannelID $chan $serverid]
 	set logid [getLogID]
-	set sql "INSERT INTO nlogview_activity(channelid, ircuserid, logid, activitytype, activitytime) ";
-	append sql "VALUES($channelid, $ircuserid, $logid, $activitytype, now())";
+	set sql "INSERT INTO nlogview_activity(channelid, ircuserid, logid, activitytype, activitytime) VALUES($channelid, $ircuserid, $logid, $activitytype, now())";
 	mysqlexec $db_handle $sql;
 }
 
@@ -87,6 +86,7 @@ proc getChannelID { name serverid } {
 			set retval [lindex $row 0]
 		}
 		set statics($name) $retval;
+		mysqlendquery $result;
 	}
 	return $retval;
 }
@@ -107,6 +107,7 @@ proc getServerID { } {
 			set retval [lindex $row 0];
 		}
 		set statics(serverid) $retval;
+		mysqlendquery $result;
 	}
 	return $retval;
 }
@@ -127,6 +128,7 @@ proc getLogID { } {
 			set retval [lindex $row 0];
 		}
 		set statics(logid) $retval;
+		mysqlendquery $result;
 	}
 	return $retval;
 }
@@ -144,6 +146,7 @@ proc getNUHid { lookup tablename idcolname } {
 	} else {
 		set retval [lindex $row 0];
 	}
+	mysqlendquery $result;
 	return $retval;
 }
 
@@ -169,6 +172,7 @@ proc getIRCUserID { nick uh } {
 			set retval [lindex $row 0];
 		}
 		set statics($nick$uh) $retval;
+		mysqlendquery $result;
 	}
 	return $retval;
 }
