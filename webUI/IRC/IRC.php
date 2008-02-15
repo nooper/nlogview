@@ -19,7 +19,7 @@ class IRC extends nLogView
 			<b>IRC</b>
 			:: <a href="$this->mypath?action=search">Search</a>
 			| <a href="$this->mypath?action=showservers">Servers</a>
-			| <a href="$this->mypath?action=showlogs">Logs</a>
+			| <a href="$this->basepath/IRC/showlog.php?action=showlogs">Logs</a>
 			<tr><td>
 EOF;
 
@@ -49,72 +49,6 @@ EOF;
 			);
 		}
 		return $logdata;
-	}
-
-	public function getNicks()
-	{
-		$nickdata = array();
-		$q = $this->query("SELECT * FROM nlogview_nicks");
-		while($row = $q->fetchRow(DB_FETCHMODE_ASSOC))
-		{
-			$nickdata[] = array(
-				'id' => $row['nickid'],
-				'name' => $row['name']
-			);
-		}
-		return $nickdata;
-	}
-
-	public function getUsers()
-	{
-		$userdata = array();
-		$q = $this->query("SELECT * from nlogview_users");
-		while($row = $q->fetchRow(DB_FETCHMODE_ASSOC))
-		{
-			$userdata[] = array(
-				'id' => $row['userid'],
-				'name' => $row['name']
-			);
-		}
-		return $userdata;
-	}
-
-	public function getHosts()
-	{
-		$hostdata = array();
-		$q = $this->query("SELECT * from nlogview_hosts");
-		while($row = $q->fetchRow(DB_FETCHMODE_ASSOC))
-		{
-			$hostdata[] = array(
-				'id' => $row['hostid'],
-				'name' => $row['name']
-			);
-		}
-		return $hostdata;
-	}
-
-	public function getIRCUsers()
-	{
-		$ray = array();
-		$sql = "select i.ircuserid, nick.nickid, nick.name as nickname, user.userid, user.name as username, host.hostid, host.name as hostname " .
-			"from nlogview_ircusers i " .
-				"inner join nlogview_nicks nick ON i.nickid = nick.nickid " .
-				"inner join nlogview_users user on i.userid = user.userid " .
-				"inner join nlogview_hosts host on i.hostid = host.hostid ";
-		$q = $this->query($sql);
-		while($row = $q->fetchRow(DB_FETCHMODE_ASSOC))
-		{
-			$ray[] = array(
-				'ircuserid' => $row['ircuserid'],
-				'nickid' => $row['nickid'],
-				'nickname' => $row['nickname'],
-				'userid' => $row['userid'],
-				'username' => $row['username'],
-				'hostid' => $row['hostid'],
-				'hostname' => $row['hostname']
-			);
-		}
-		return $ray;
 	}
 
 	public function getServers()
@@ -179,32 +113,29 @@ EOF;
 		if( strlen($nickname) > 0 ) {
 			if( $nicktype == 'is' ) {
 				$filter[] = " n.name = ? ";
-				$data[] = $nickname;
 			}
 			elseif( $nicktype == 'like' ) {
 				$filter[] = " n.name like ? ";
-				$data[] = "%" . $nickname . "%";
 			}
+			$data[] = $nickname;
 		}
 		if( strlen($username) > 0 ) {
 			if( $usertype == 'is' ) {
 				$filter[] = " u.name = ? ";
-				$data[] = $username;
 			}
 			elseif( $usertype == 'like' ) {
 				$filter[] = " u.name like ? ";
-				$data[] = "%" . $username . "%";
 			}
+			$data[] = $username;
 		}
 		if( strlen($hostname) > 0 ) {
 			if( $hosttype == 'is' ) {
 				$filter[] = " h.name = ? ";
-				$data[] = $hostname;
 			}
 			elseif( $hosttype == 'like' ) {
 				$filter[] = " h.name like ? ";
-				$data[] = "%" . $hostname . "%";
 			}
+			$data[] = $hostname;
 		}
 		
 		foreach( $filter as $cond ) {
@@ -248,7 +179,7 @@ EOF;
 		if($type == 'irssi')
 		{
 			$parser = new irssiparser;
-			$parser->addInput($path, $realname, $name);
+			$parser->addInput($path, $realname, $name, $offset);
 			$parser->writeToDB( $serverid );
 		}
 	}
@@ -284,7 +215,7 @@ EOF;
 		/* keep cellheight odd, minimum 9 (lowest font height available) */
 
 		//Get first and last date for image map
-		$sql = "select $celltime * round(unix_timestamp(min(activitytime))/$celltime), $celltime * round(unix_timestamp(max(activitytime))/$celltime) ";
+		$sql = "select unix_timestamp(min(activitytime)), unix_timestamp(max(activitytime)) ";
 		$sql .= "from nlogview_activity ";
 		$sql .= "where ircuserid in ($userids)";
 		$q = $this->query($sql);
@@ -292,15 +223,25 @@ EOF;
 		$unix_begin_time = mktime(0, 0, 0, date('m', $row[0]), date('d', $row[0]), date('Y', $row[0]));
 		$unix_end_time = $row[1];
 		$rowcount = ceil(($unix_end_time - $unix_begin_time) / $rowtime);
+		$imageheight = $rowcount * $cellheight;
 
 		//get size for date stamps
 		$font = $this->getMaxFont( $cellheight );
 		$xoffset = imagefontwidth($font) * 12;
 
 		//create image, sized according to fetched dates
-		$image = imagecreate( $xoffset + ($cellsperrow * $cellwidth), $rowcount * $cellheight );
+		$image = imagecreate( $xoffset + ($cellsperrow * $cellwidth) + 1, $imageheight );
 		$blue = imagecolorallocate($image, 0, 0, 255);
 		$white = imagecolorallocate($image, 255, 255, 255);
+		$lightblue = imagecolorallocate($image, 50, 50, 255);
+
+		//draw 3 equidistant lines
+		$sepwidth = $cellsperrow / 4;
+		$lines = 5;
+		while( $lines--  )
+		{
+			imagefilledrectangle ( $image, $xoffset + ($sepwidth * $lines), 0, $xoffset + ($sepwidth * $lines), $imageheight, $lightblue );
+		}
 
 		$sql = "select round(log(?,count(activityid)))+1, ? * round(unix_timestamp(activitytime) / ?) ";
 		$sql .= "from nlogview_activity ";
@@ -313,9 +254,10 @@ EOF;
 		$now = $unix_begin_time;
 		$date_y_offset = ( $cellheight - imagefontheight($font) ) / 2;
 		//stamp dates
+		$firstdate = $now;
 		for( $currow = 0; $currow < $rowcount; $currow++) {
+			$now = strtotime("+ $currow day", $firstdate);
 			imagestring($image, $font, 0, $date_y_offset + ($currow * $cellheight), date("Y-m-d", $now), $white);
-			$now += $rowtime;
 		}
 		while($row = $q->fetchrow()){
 			$index = ($row[1] - $unix_begin_time) / $celltime;

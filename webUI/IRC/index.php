@@ -6,120 +6,12 @@ $thispage = new IRC;
 
 $thispage->printHeader();
 
-function showLogs($thispage)
-{
-	$logdata = $thispage->getlogs();
-	echo "<br/><table border=1><tr><th>Name</th><th>Source</th><th>Timestamp</th></tr>";
-	foreach($logdata as $rowdata)
-	{
-		echo  "<tr><td><a href='showlog.php?logid=" . $rowdata['logid'] . "'>" .  $rowdata['name'] . "</a></td><td>" . $rowdata['source'] . "</td><td>" . $rowdata['timestamp'] . "</td></tr>";
-	}
-	echo "</table>";
-
-
-	echo <<<ENDHTML
-<form method=post action="?action=logsubmit" enctype="multipart/form-data">
-	Name: <input type=text name="Name">
-	<br/>
-	Server: <select name="serverid">	
-ENDHTML;
-	$serverray = $thispage->getServers();
-	foreach($serverray as $server)
-	{
-		$servername = $server['name'];
-		$serverid = $server['id'];
-		echo "<option value=$serverid>$servername</option>";
-	}
-
-	echo <<<ENDHTML
-	</select><br/>
-	Type:
-	<select name="sourcetype">
-		<option value="irssi">irssi</option>
-		<option value="trillian">trillian</option>
-	</select>
-	<br/>
-	<input type="file" name="logfileupload">
-	<br/>
-	<input type=submit value="Add log">
-</form>
-</td>
-</tr>
-</table>
-ENDHTML;
-
-}
-
-
 if(!isset($_GET['action']))
 {
 	$_GET['action'] = "";
 }
 
-if($_GET['action'] == 'showlogs')
-{
-	showLogs($thispage);
-}
-elseif($_GET['action'] == 'shownicks')
-{
-	$nickdata = $thispage->getNicks();
-	echo "<br/><table border=1>";
-	foreach($nickdata as $nickinfo)
-	{
-		echo "<tr><td><a href=?action=filter&nickid=" . $nickinfo['id'] . ">" .  $nickinfo['name'] . "</a></td></tr>";
-	}
-	echo "</table>";
-}
-elseif($_GET['action'] == 'showusers')
-{
-	$userdata = $thispage->getUsers();
-	echo "<br/><table border=1>";
-	foreach($userdata as $userinfo)
-	{
-		echo "<tr><td><a href=?action=filter&userid=" . $userinfo['id'] . ">" . $userinfo['name'] . "</a></td></tr>";
-	}
-	echo "</table>";
-}
-elseif($_GET['action'] == 'showhosts')
-{
-	$hostdata = $thispage->getHosts();
-	echo "<br/><table border=1>";
-	foreach($hostdata as $hostinfo)
-	{
-		echo "<tr><td><a href=?action=filter&hostid=" . $hostinfo['id'] . ">" . $hostinfo['name'] . "</a></td></tr>";
-	}
-	echo "</table>";
-}
-elseif($_GET['action'] == 'showircusers')
-{
-	$userray = $thispage->getIRCUsers();
-	echo "<br/><table border=1><tr><th>Nick</th><th>User</th><th>Host</th></tr>";
-	foreach($userray as $s)
-	{
-		echo "<tr>";
-		echo "<td><a href=?action=filter&nickid=" . $s['nickid'] . ">" . $s['nickname'] . "</a></td>";
-		echo "<td><a href=?action=filter&userid=" . $s['userid'] . ">" . $s['username'] . "</a></td>";
-		echo "<td><a href=?action=filter&hostid=" . $s['hostid'] . ">" . $s['hostname'] . "</a></td>";
-		echo "</tr>";
-	}
-	echo "</table>";
-}
-elseif( $_GET['action'] == 'logsubmit' )
-{
-	if( isset($_FILES['logfileupload']) &&
-		($_FILES['logfileupload']['error'] == UPLOAD_ERR_OK) &&
-       		isset($_POST['Name'])	)
-	{
-
-		echo $thispage->readLogFile( $_FILES['logfileupload']['tmp_name'], $_FILES['logfileupload']['name'], 'irssi', $_POST['Name'], $_POST['serverid']);
-		showLogs($thispage);
-	}
-	else
-	{
-		echo "Bad submit";
-	}
-}
-elseif( $_GET['action'] == 'addserver' )
+if( $_GET['action'] == 'addserver' )
 {
 	if (isset($_GET['servername']) && isset($_GET['serveraddr']))
 	{

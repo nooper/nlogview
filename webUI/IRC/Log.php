@@ -4,20 +4,17 @@ require('IRC.php');
 
 class Logs extends IRC {
 
-	protected $logid;
 	private $mypath;
 	private $logData;
 
-	public function __construct( $logid ) {
+	public function __construct() {
 		parent::__construct();
-		$this->logid = $logid;
-		$this->mypath = $this->basepath . "logs.php";
-		$this->getLogData();
+		$this->mypath = $this->basepath . "IRC/showlog.php";
 	}
 
-	public function getLogData() {
+	public function getLogData($logid) {
 		if( count($this->logData) == 0 ) {
-			$q = $this->query("SELECT * FROM nlogview_logs WHERE logid=?", array($this->logid));
+			$q = $this->query("SELECT * FROM nlogview_logs WHERE logid=?", array($logid));
 			$row = $q->fetchrow();
 			$this->logData = array(
 				'name' => $row[1],
@@ -30,9 +27,10 @@ class Logs extends IRC {
 
 	public function printHeader() {
 		parent::printHeader();
-		$logdata = $this->getLogData();
-		echo "<table><tr><td><b>Logs</b> :: " . $logdata['name'] . "</td>";
-		echo "</tr>";
+		echo "<table><tr><td><b>Logs</b> ::";
+		echo " <a href=$this->mypath?action=showlogs>List</a> |";
+		echo " <a href=$this->mypath?action=addlog>Add</a>";
+		echo "</td></tr>";
 		echo "<tr><td>";
 	}
 
@@ -41,20 +39,20 @@ class Logs extends IRC {
 		parent::printFooter();
 	}
 
-	public function getMinTime() {
-		$q = $this->query("SELECT min(activitytime) FROM nlogview_activity WHERE logid=?", array($this->logid));
+	public function getMinTime($logid) {
+		$q = $this->query("SELECT min(activitytime) FROM nlogview_activity WHERE logid=?", array($logid));
 		$row = $q->fetchrow();
 		return $row[0];
 	}
 
-	public function getMaxTime() {
-		$q = $this->query("SELECT max(activitytime) FROM nlogview_activity WHERE logid=?", array($this->logid));
+	public function getMaxTime($logid) {
+		$q = $this->query("SELECT max(activitytime) FROM nlogview_activity WHERE logid=?", array($logid));
 		$row = $q->fetchrow();
 		return $row[0];
 	}
 
-	public function getActivityCount() {
-		$q = $this->query("SELECT count(activityid) FROM nlogview_activity WHERE logid=?", array($this->logid));
+	public function getActivityCount($logid) {
+		$q = $this->query("SELECT count(activityid) FROM nlogview_activity WHERE logid=?", array($logid));
 		$row = $q->fetchrow();
 		return $row[0];
 	}
