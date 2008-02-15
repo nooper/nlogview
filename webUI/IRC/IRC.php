@@ -179,7 +179,7 @@ EOF;
 		if($type == 'irssi')
 		{
 			$parser = new irssiparser;
-			$parser->addInput($path, $realname, $name, $offset);
+			$parser->addInput($path, $realname, $name);
 			$parser->writeToDB( $serverid );
 		}
 	}

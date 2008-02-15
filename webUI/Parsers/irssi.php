@@ -437,7 +437,6 @@ class irssiparser extends parser
 		$this->channelid = $this->addChannel( $this->serverid, "newchannel" );
 		$this->logid = $this->addLogRecord( $username, $realname );
 		$filehandle = gzopen( $path, "r" );
-		fseek( $filehandle, $offset );
 		while ( !feof( $filehandle ) )
 		{
 			set_time_limit(30);
@@ -484,10 +483,8 @@ class irssiparser extends parser
 				//dunno
 			}
 		}
-		$position = ftell( $filehandle );
 		gzclose( $filehandle );
 		$this->setChannelName( $this->channelid, $channelname );
-		return $position;
 	}
 
 	public function writeToDB( $serverid )
