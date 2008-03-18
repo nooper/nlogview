@@ -220,7 +220,7 @@ EOF;
 		$sql .= "where ircuserid in ($userids)";
 		$q = $this->query($sql);
 		$row = $q->fetchrow();
-		$unix_begin_time = mktime(0, 0, 0, date('m', $row[0]), date('d', $row[0]), date('Y', $row[0]));
+		$unix_begin_time = gmmktime(0, 0, 0, gmdate('m', $row[0]), gmdate('d', $row[0]), gmdate('Y', $row[0]));
 		$unix_end_time = $row[1];
 		$rowcount = ceil(($unix_end_time - $unix_begin_time) / $rowtime);
 		$imageheight = $rowcount * $cellheight;
@@ -257,7 +257,7 @@ EOF;
 		$firstdate = $now;
 		for( $currow = 0; $currow < $rowcount; $currow++) {
 			$now = strtotime("+ $currow day", $firstdate);
-			imagestring($image, $font, 0, $date_y_offset + ($currow * $cellheight), date("Y-m-d", $now), $white);
+			imagestring($image, $font, 0, $date_y_offset + ($currow * $cellheight), gmdate("Y-m-d", $now), $white);
 		}
 		while($row = $q->fetchrow()){
 			$index = ($row[1] - $unix_begin_time) / $celltime;
