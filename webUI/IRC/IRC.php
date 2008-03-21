@@ -223,14 +223,15 @@ EOF;
 		$unix_begin_time = gmmktime(0, 0, 0, gmdate('m', $row[0]), gmdate('d', $row[0]), gmdate('Y', $row[0]));
 		$unix_end_time = $row[1];
 		$rowcount = ceil(($unix_end_time - $unix_begin_time) / $rowtime);
-		$imageheight = $rowcount * $cellheight;
+		$imageheight = $rowcount * $cellheight + ($cellheight * 2);
 
 		//get size for date stamps
 		$font = $this->getMaxFont( $cellheight );
 		$xoffset = imagefontwidth($font) * 12;
+		$imagewidth = $xoffset + ($cellsperrow * $cellwidth) + 1;
 
 		//create image, sized according to fetched dates
-		$image = imagecreate( $xoffset + ($cellsperrow * $cellwidth) + 1, $imageheight );
+		$image = imagecreate( $imagewidth, $imageheight );
 		$blue = imagecolorallocate($image, 0, 0, 255);
 		$white = imagecolorallocate($image, 255, 255, 255);
 		$lightblue = imagecolorallocate($image, 50, 50, 255);
@@ -243,17 +244,10 @@ EOF;
 			imagefilledrectangle ( $image, $xoffset + ($sepwidth * $lines), 0, $xoffset + ($sepwidth * $lines), $imageheight, $lightblue );
 		}
 
-		$sql = "select round(log(?,count(activityid)))+1, ? * round(unix_timestamp(activitytime) / ?) ";
-		$sql .= "from nlogview_activity ";
-		$sql .= "where ircuserid in ($userids) ";
-		$sql .= "group by round(unix_timestamp(activitytime)/?) ";
-		$sql .= "order by round(unix_timestamp(activitytime)/?)";
-		$data = array( $logbase, $celltime, $celltime, $celltime, $celltime);
-		$q = $this->query($sql, $data);
+		//stamp dates
+		$date_y_offset = ( $cellheight - imagefontheight($font) ) / 2;
 		$mid = $cellheight / 2;
 		$now = $unix_begin_time;
-		$date_y_offset = ( $cellheight - imagefontheight($font) ) / 2;
-		//stamp dates
 		$firstdate = $now;
 		for( $currow = 0; $currow < $rowcount; $currow++) {
 			$now = mktime( 0, 0, 0,
@@ -263,6 +257,19 @@ EOF;
 			);
 			imagestring($image, $font, 0, $date_y_offset + ($currow * $cellheight), gmdate("Y-m-d", $now), $white);
 		}
+		
+		$stampstr = "Created " . gmdate("c");
+		$stamplen = imagefontwidth($font) * strlen($stampstr);
+		imagestring($image, $font, $imagewidth - $stamplen - 1, $imageheight - $cellheight, $stampstr, $white);
+
+		//the actual work
+		$sql = "select round(log(?,count(activityid)))+1, ? * round(unix_timestamp(activitytime) / ?) ";
+		$sql .= "from nlogview_activity ";
+		$sql .= "where ircuserid in ($userids) ";
+		$sql .= "group by round(unix_timestamp(activitytime)/?) ";
+		$sql .= "order by round(unix_timestamp(activitytime)/?)";
+		$data = array( $logbase, $celltime, $celltime, $celltime, $celltime);
+		$q = $this->query($sql, $data);
 		while($row = $q->fetchrow()){
 			$index = ($row[1] - $unix_begin_time) / $celltime;
 			$x = $xoffset + fmod($index, $cellsperrow);
