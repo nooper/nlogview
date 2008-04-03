@@ -77,7 +77,7 @@ EOF;
 			$sql = "SELECT n.name nickname, u.name username, h.name hostname, i.ircuserid, i.nickid, i.userid, i.hostid, count(a.activityid) c ";
 			$sql .= "FROM nlogview_ircusers i ";
 			$sql .= "INNER JOIN nlogview_nicks n ON i.nickid = n.nickid ";
-			$sql .= "INNER JOIN nlogview_users u ON i.userid = u.userid ";
+			$sql .= "INNER JOIN nlogview_idents u ON i.userid = u.userid ";
 			$sql .= "INNER JOIN nlogview_hosts h ON i.hostid = h.hostid ";
 			$sql .= "INNER JOIN nlogview_activity a ON i.ircuserid = a.ircuserid ";
 			if($nickid > 0)
@@ -104,7 +104,7 @@ EOF;
 		$sql = "SELECT n.name nickname, u.name username, h.name hostname, i.ircuserid, i.nickid, i.userid, i.hostid, count(a.activityid) c ";
 		$sql .= "FROM nlogview_ircusers i ";
 		$sql .= "INNER JOIN nlogview_nicks n ON i.nickid = n.nickid ";
-		$sql .= "INNER JOIN nlogview_users u ON i.userid = u.userid ";
+		$sql .= "INNER JOIN nlogview_idents u ON i.userid = u.userid ";
 		$sql .= "INNER JOIN nlogview_hosts h ON i.hostid = h.hostid ";
 		$sql .= "INNER JOIN nlogview_activity a ON i.ircuserid = a.ircuserid WHERE ";
 

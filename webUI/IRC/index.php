@@ -71,7 +71,7 @@ elseif( $_GET['action'] == 'search' )
 	<input type=hidden name=action value=search>
 	<table border=0>
 
-	<tr><th>nick</th><th>[</th><th>user</th><th>@</th><th>host</th><th>]</th></tr>
+	<tr><th>nick</th><th>!</th><th>ident</th><th>@</th><th>host</th><th></th></tr>
 ENDHTML;
 
 	echo "<tr>";
@@ -97,11 +97,11 @@ ENDHTML;
 
 	echo "<tr>";
 	echo "<td><input type=textbox name=nickvalue value={$_GET['nickvalue']}></td>";
-	echo "<td>[</td>";
+	echo "<td>!</td>";
 	echo "<td><input type=textbox name=uservalue value={$_GET['uservalue']}></td>";
 	echo "<td>@</td>";
 	echo "<td><input type=texbox name=hostvalue value={$_GET['hostvalue']}></td>";
-	echo "<td>]</td>";
+	echo "<td></td>";
 	echo "</tr>";
 
 	echo "</table>";

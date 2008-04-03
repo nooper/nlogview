@@ -145,7 +145,7 @@ class irssiparser extends parser
 		}
 		else
 		{
-			$userid = $this->selectInsert("nlogview_users", "userid", "name", $user);
+			$userid = $this->selectInsert("nlogview_idents", "userid", "name", $user);
 			$this->userid[$user] = $userid;
 		}
 		return $userid;
@@ -194,7 +194,7 @@ class irssiparser extends parser
 
 	private function setUser( $ircuserid, $user )
 	{
-		$q = $this->query("UPDATE nlogview_users SET name=? WHERE userid=(SELECT userid FROM nlogview_ircusers where ircuserid=?)",
+		$q = $this->query("UPDATE nlogview_idents SET name=? WHERE userid=(SELECT userid FROM nlogview_ircusers where ircuserid=?)",
 			array($user, $ircuserid));
 	}
 
@@ -236,7 +236,7 @@ class irssiparser extends parser
 		$q = $this->query("UPDATE nlogview_ircusers SET userid=?, hostid=? WHERE userid=? AND hostid=?",
 			array($newuserid, $newhostid, $olduserid, $oldhostid));
 
-		$q = $this->query("DELETE FROM nlogview_users where userid=?", array($olduserid));
+		$q = $this->query("DELETE FROM nlogview_idents where userid=?", array($olduserid));
 
 		$q = $this->query("DELETE FROM nlogview_hosts where hostid=?", array($oldhostid));
 	}
