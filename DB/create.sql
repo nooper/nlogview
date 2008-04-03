@@ -1,11 +1,12 @@
-drop table nlogview_activity;
-drop table nlogview_logs;
-drop table nlogview_ircusers;
-drop table nlogview_channels;
-drop table nlogview_servers;
-drop table nlogview_hosts;
-drop table nlogview_users;
-drop table nlogview_nicks;
+drop table if exists nlogview_activity;
+drop table if exists nlogview_logs;
+drop table if exists nlogview_ircusers;
+drop table if exists nlogview_channels;
+drop table if exists nlogview_servers;
+drop table if exists nlogview_hosts;
+drop table if exists nlogview_idents;
+drop table if exists nlogview_nicks;
+drop table if exists nlogview_static;
 
 
 create table nlogview_servers
@@ -31,7 +32,7 @@ name varchar(255) not null,
 index (name)
 ) engine=innodb;
 
-create table nlogview_users
+create table nlogview_idents
 (
 userid int unsigned auto_increment primary key,
 name varchar(255) not null,
@@ -55,7 +56,7 @@ unique (nickid, userid, hostid),
 index (nickid),
 index (userid),
 index (hostid),
-foreign key (userid) references nlogview_users(userid),
+foreign key (userid) references nlogview_idents(userid),
 foreign key (nickid) references nlogview_nicks(nickid),
 foreign key (hostid) references nlogview_hosts(hostid)
 ) engine=innodb;
