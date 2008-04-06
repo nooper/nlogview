@@ -159,7 +159,7 @@ proc getIRCUserID { nick uh } {
 		set user [lindex $uhsplit 0]
 		set host [lindex $uhsplit 1]
 		set nickid [getNUHid $nick "nlogview_nicks" "nickid"];
-		set userid [getNUHid $user "nlogview_users" "userid"];
+		set userid [getNUHid $user "nlogview_idents" "userid"];
 		set hostid [getNUHid $host "nlogview_hosts" "hostid"];
 		set sql "SELECT ircuserid FROM nlogview_ircusers WHERE nickid = $nickid AND userid = $userid AND hostid = $hostid";
 		set result [mysqlquery $db_handle $sql]
