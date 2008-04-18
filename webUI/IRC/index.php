@@ -119,7 +119,7 @@ ENDHTML;
 
 		echo "<table border=1>\n";
 		echo "<tr><th><input type=checkbox name=mastercheck onClick='checkAll(document.matches, \"ircuserid[]\", document.matches.mastercheck)'></th>\n";
-		echo "<th>Nick</th><th>User</th><th>Host</th><th>Activity Count</th></tr>\n";
+		echo "<th>Nick</th><th>Ident</th><th>Host</th><th>Activity Count</th></tr>\n";
 
 		foreach($matches as $u)
 		{
