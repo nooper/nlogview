@@ -116,7 +116,7 @@ elseif( $_GET['action'] == 'logsubmitlocal' )
 	$path = $_POST['fullpath'];
 	if( file_exists($path) )
 	{
-		echo $thispage->readLogFile( $path, $_POST['friendlyname'], 'irssi', $path, $_POST['serverid']);
+		echo $thispage->readLogFile( $path, $path, 'irssi', $_POST['friendlyname'], $_POST['serverid']);
 		showLogs($thispage);
 	}
 	else

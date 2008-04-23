@@ -42,12 +42,12 @@ class irssiparser extends parser
 		$this->lineregex["daychange"] = "/--- Day changed $w $w $w $w$/";
 	}
 
-	public function addInput( $localpath, $realname, $username, $formatstring = '' )
+	public function addInput( $fullpath, $shortpath, $friendlyname, $formatstring = '' )
 	{
 		$this->inputs[] = array( 
-			'localpath' => $localpath,
-			'realname' => $realname,
-			'username' => $username,
+			'fullpath' => $fullpath,
+			'shortpath' => $shortpath,
+			'friendlyname' => $friendlyname,
 			'fmt' => $formatstring
 		);
 	}
@@ -79,9 +79,9 @@ class irssiparser extends parser
 		//everything else
 	}
 
-	private function addLogRecord($name, $path)
+	private function addLogRecord($friendlyname, $shortpath)
 	{
-		$q = $this->query("INSERT INTO nlogview_logs(name, source) values(?,?)", array($name, $path));
+		$q = $this->query("INSERT INTO nlogview_logs(name, source) values(?,?)", array($friendlyname, $shortpath));
 		$row = $this->query("SELECT max(logid) from nlogview_logs")->fetchrow();
 		return $row[0];
 	}
@@ -431,12 +431,12 @@ class irssiparser extends parser
 		}
 	}
 
-	private function singleFileToDB( $path, $username, $realname )
+	private function singleFileToDB( $fullpath, $friendlyname, $shortpath )
 	{
 		$channelname = "";
 		$this->channelid = $this->addChannel( $this->serverid, "newchannel" );
-		$this->logid = $this->addLogRecord( $username, $realname );
-		$filehandle = gzopen( $path, "r" );
+		$this->logid = $this->addLogRecord( $friendlyname, $shortpath );
+		$filehandle = gzopen( $fullpath, "r" );
 		while ( !feof( $filehandle ) )
 		{
 			set_time_limit(30);
@@ -493,7 +493,7 @@ class irssiparser extends parser
 		$this->serverid = $serverid;
 		foreach($this->inputs as $singlefile)
 		{
-			$this->singleFileToDB( $singlefile['localpath'], $singlefile['username'], $singlefile['realname'] );
+			$this->singleFileToDB( $singlefile['fullpath'], $singlefile['friendlyname'], $singlefile['shortpath'] );
 		}
 		$this->query("COMMIT");
 	}

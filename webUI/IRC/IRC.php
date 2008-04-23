@@ -169,7 +169,7 @@ EOF;
 		return $retval;
 	}
 
-	public function readLogFile($path, $realname, $type, $name, $serverid)
+	public function readLogFile($fullpath, $shortpath, $type, $friendlyname, $serverid)
 	{
 		//add generic channel name and get ID
 		//when channel name is found, update name
@@ -179,7 +179,7 @@ EOF;
 		if($type == 'irssi')
 		{
 			$parser = new irssiparser;
-			$parser->addInput($path, $realname, $name);
+			$parser->addInput($fullpath, $shortpath, $friendlyname);
 			$parser->writeToDB( $serverid );
 		}
 	}
