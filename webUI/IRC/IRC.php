@@ -250,9 +250,9 @@ EOF;
 		$now = $unix_begin_time;
 		$firstdate = $now;
 		for( $currow = 0; $currow < $rowcount; $currow++) {
-			$now = mktime( 0, 0, 0,
+			$now = mktime( 0, 0, $currow * $rowtime,
 				gmdate("m", $firstdate),
-				gmdate("d", $firstdate) + $currow,
+				gmdate("d", $firstdate),
 				gmdate("Y", $firstdate)
 			);
 			imagestring($image, $font, 0, $date_y_offset + ($currow * $cellheight), gmdate("Y-m-d", $now), $white);

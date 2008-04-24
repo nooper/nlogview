@@ -9,6 +9,7 @@ if (!isset($_GET['action'])) {
 
 
 switch ( $_GET['action'] ) {
+default:
 case "showchannels" :
 	$channels = $thispage->getChannels();
 	echo "<table>";
@@ -16,8 +17,6 @@ case "showchannels" :
 		echo "<tr><td><a href=showchannel.php?channelid=" . $chan['id'] . ">" . $chan['name'] . "</a></td></tr>";
 	}
 	break;
-default:
-	echo "Hello";
 }
 
 
