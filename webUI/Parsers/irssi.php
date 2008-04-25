@@ -40,6 +40,7 @@ class irssiparser extends parser
 		$this->lineregex["msg"] = "/^$t <.$w>/";
 		$this->lineregex["emote"] = "/^$t  \* $w/";
 		$this->lineregex["daychange"] = "/--- Day changed $w $w $w $w$/";
+		$this->connect();
 	}
 
 	public function addInput( $fullpath, $shortpath, $friendlyname, $formatstring = '' )
@@ -54,7 +55,9 @@ class irssiparser extends parser
 
 	private function addChannel($serverid, $channelname)
 	{
-		$q = $this->query('SELECT channelid from nlogview_channels where serverid=? and name= ?', array($serverid, $channelname));
+		$q = $this->query('SELECT channelid from nlogview_channels where serverid='
+			. $this->quote($serverid, 'integer') . ' and name='
+			. $this->quote($channelname, 'text'));
 
 		if($q->numrows() == 1)
 		{
@@ -63,7 +66,9 @@ class irssiparser extends parser
 		}
 		elseif($q->numrows() == 0)
 		{
-			$q = $this->query('INSERT INTO nlogview_channels(serverid, name) values(?,?)', array($serverid, $channelname));
+			$q = $this->exec('INSERT INTO nlogview_channels(serverid, name) values('
+				. $this->quote($serverid, 'integer') . ','
+				. $this->quote($channelname, 'text') . ')');
 			return $this->addChannel($serverid, $channelname);
 		}
 		else
@@ -72,16 +77,11 @@ class irssiparser extends parser
 		}
 	}
 
-	private function readIrssiLog($path, $logid, $channelID)
-	{
-		$havechannel = 0; //channel name is unknown when starting the read
-		//message
-		//everything else
-	}
-
 	private function addLogRecord($friendlyname, $shortpath)
 	{
-		$q = $this->query("INSERT INTO nlogview_logs(name, source) values(?,?)", array($friendlyname, $shortpath));
+		$q = $this->exec("INSERT INTO nlogview_logs(name, source) values("
+			. $this->quote($friendlyname, 'text') . ','
+			. $this->quote($shortpath, 'text') . ')');
 		$row = $this->query("SELECT max(logid) from nlogview_logs")->fetchrow();
 		return $row[0];
 	}
@@ -94,15 +94,20 @@ class irssiparser extends parser
 
 	private function insertActivity($ircuserid, $type, $time)
 	{
-		$q = $this->query('INSERT INTO nlogview_activity( channelid, ircuserid, logid, activitytype, activitytime ) VALUES(?,?,?,?,?)',
-			array($this->channelid, $ircuserid, $this->logid, $type, $time));
+		$sql = 'INSERT INTO nlogview_activity( channelid, ircuserid, logid, activitytype, activitytime ) VALUES('
+			. $this->quote( $this->channelid, 'integer' ) . ','
+			. $this->quote( $ircuserid, 'integer' ) . ','
+			. $this->quote( $this->logid, 'integer' ) . ','
+			. $this->quote( $type, 'integer' ) . ','
+			. $this->quote( $time, 'text' ) . ')';
+		$q = $this->exec( $sql );
 	}
 
 	private function selectInsert($tablename, $idcolname, $valuecolname, $value)
 	{
 		$retval = 0;
-		$sql = "SELECT $idcolname FROM $tablename WHERE " . $valuecolname . " = ?";
-		$q = $this->query($sql, array($value));
+		$sql = "SELECT $idcolname FROM $tablename WHERE " . $valuecolname . " = " . $this->quote($value, 'text');
+		$q = $this->query($sql);
 		if( $q->numrows() == 1 )
 		{
 			$row = $q->fetchrow();
@@ -110,8 +115,8 @@ class irssiparser extends parser
 		}
 		elseif( $q->numrows() == 0 )
 		{
-			$sql = "INSERT INTO $tablename($valuecolname) values(?)";
-			$q = $this->query($sql, array($value));
+			$sql = "INSERT INTO $tablename($valuecolname) values(" . $this->quote($value, 'text') . ")";
+			$q = $this->exec($sql);
 			return $this->selectInsert($tablename, $idcolname, $valuecolname, $value);
 		}
 		else
@@ -186,7 +191,7 @@ class irssiparser extends parser
 			}
 			else
 			{
-				$q = $this->query("INSERT INTO nlogview_ircusers(nickid, userid, hostid) VALUES(?,?,?)", array($nickid, $userid, $hostid));
+				$q = $this->exec("INSERT INTO nlogview_ircusers(nickid, userid, hostid) VALUES($nickid,$userid,$hostid)");
 				return $this->getIRCUserID($nickid, $userid, $hostid);
 			}
 		}
@@ -194,14 +199,16 @@ class irssiparser extends parser
 
 	private function setUser( $ircuserid, $user )
 	{
-		$q = $this->query("UPDATE nlogview_idents SET name=? WHERE userid=(SELECT userid FROM nlogview_ircusers where ircuserid=?)",
-			array($user, $ircuserid));
+		$q = $this->exec("UPDATE nlogview_idents SET name="
+			. $this->quote($ircuserid, 'integer') 
+			. "  WHERE userid=(SELECT userid FROM nlogview_ircusers where ircuserid="
+			. $this->quote($user, 'text') . ")");
 	}
 
 	private function setHost( $ircuserid, $host )
 	{
-		$q = $this->query("UPDATE nlogview_hosts set name=? WHERE hostid=(SELECT hostid from nlogview_ircusers where ircuserid=?)",
-			array($host, $ircuserid));
+		$q = $this->exec("UPDATE nlogview_hosts set name=$ircuserid WHERE hostid=(SELECT hostid from nlogview_ircusers where ircuserid="
+			. $this->quote($host, 'text') . ")");
 	}
 
 	private function retroFixup( $nick, $user, $host )
@@ -222,23 +229,22 @@ class irssiparser extends parser
 		$sql = "UPDATE nlogview_activity act, nlogview_ircusers bad, nlogview_ircusers good ";
 		$sql .= "SET act.ircuserid = good.ircuserid ";
 		$sql .= "WHERE act.ircuserid = bad.ircuserid AND bad.nickid = good.nickid AND ";
-		$sql .= "bad.userid=? AND bad.hostid=? AND good.userid=? AND good.hostid=?";
-		$q = $this->query($sql, array($olduserid, $oldhostid, $newuserid, $newhostid));
+		$sql .= "bad.userid=$olduserid AND bad.hostid=$oldhostid AND good.userid=$newuserid AND good.hostid=$newhostid";
+		$q = $this->exec($sql);
 
 		//delete rows renedered useless by above update
 		$sql = "DELETE FROM nlogview_ircusers bad ";
 		$sql .= "USING nlogview_ircusers bad, nlogview_ircusers good ";
 		$sql .= "WHERE bad.nickid = good.nickid ";
-		$sql .= "AND bad.userid=? and bad.hostid=? ";
-		$sql .= "AND good.userid=? and good.hostid=? ";
-		$q = $this->query($sql, array($olduserid, $oldhostid, $newuserid, $newhostid));
+		$sql .= "AND bad.userid=$olduserid and bad.hostid=$oldhostid ";
+		$sql .= "AND good.userid=$newuserid and good.hostid=$newhostid ";
+		$q = $this->exec($sql);
 
-		$q = $this->query("UPDATE nlogview_ircusers SET userid=?, hostid=? WHERE userid=? AND hostid=?",
-			array($newuserid, $newhostid, $olduserid, $oldhostid));
+		$q = $this->exec("UPDATE nlogview_ircusers SET userid=$newuserid, hostid=$newhostid WHERE userid=$olduserid AND hostid=$oldhostid");
 
-		$q = $this->query("DELETE FROM nlogview_idents where userid=?", array($olduserid));
+		$q = $this->exec("DELETE FROM nlogview_idents where userid=$olduserid");
 
-		$q = $this->query("DELETE FROM nlogview_hosts where hostid=?", array($oldhostid));
+		$q = $this->exec("DELETE FROM nlogview_hosts where hostid=$oldhostid");
 	}
 
 	private function event_msg( $match )
@@ -412,22 +418,24 @@ class irssiparser extends parser
 	{
 		$sql = "SELECT old.channelid ";
 		$sql .= "FROM nlogview_channels old ";
-		$sql .= "INNER JOIN nlogview_channels new ON new.channelid=? AND new.channelid <> old.channelid ";
-		$sql .= "WHERE old.name=?";
-		$q = $this->query($sql, array($channelid, $channelname));
+		$sql .= "INNER JOIN nlogview_channels new ON new.channelid=$channelid AND new.channelid <> old.channelid ";
+		$sql .= "WHERE old.name=" . $this->quote($channelname, 'text');
+		$q = $this->query($sql);
 		if($q->numRows() > 0)
 		{
 			$row = $q->fetchrow();
 			$oldchannelid = $row[0];
 			$sql = "UPDATE nlogview_activity SET channelid = $oldchannelid WHERE channelid = $channelid";
-			$q = $this->query($sql);
+			$q = $this->exec($sql);
 			$sql = "DELETE FROM nlogview_channels WHERE channelid = $channelid";
-			$q = $this->query($sql);
+			$q = $this->exec($sql);
 		}
 		else
 		{
-			$sql = "UPDATE nlogview_channels SET name=? WHERE channelid=?";
-			$q = $this->query($sql, array($channelname, $channelid));
+			$sql = "UPDATE nlogview_channels SET name="
+				. $this->quote($channelname, 'text')
+				. " WHERE channelid=$channelid";
+			$q = $this->exec($sql);
 		}
 	}
 
@@ -489,13 +497,13 @@ class irssiparser extends parser
 
 	public function writeToDB( $serverid )
 	{
-		$this->query("START TRANSACTION");
+		$this->db->beginTransaction();
 		$this->serverid = $serverid;
 		foreach($this->inputs as $singlefile)
 		{
 			$this->singleFileToDB( $singlefile['fullpath'], $singlefile['friendlyname'], $singlefile['shortpath'] );
 		}
-		$this->query("COMMIT");
+		$this->db->commit();
 	}
 }
 

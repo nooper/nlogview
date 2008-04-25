@@ -29,13 +29,17 @@ class Server extends IRC {
 	}
 
 	private function getServerName() {
-		$q = $this->query("SELECT name FROM nlogview_servers WHERE serverid = ?", $this->serverid);
+		$sql = "SELECT name FROM nlogview_servers WHERE serverid = ";
+		$sql .= $this->quote( $this->serverid, 'integer' );
+		$q = $this->query( $sql );
 		$row = $q->fetchrow();
 		return $row[0];
 	}
 
 	public function getChannels() {
-		$q = $this->query("SELECT channelid, name FROM nlogview_channels WHERE serverid = ?", $this->serverid);
+		$sql = "SELECT channelid, name FROM nlogview_channels WHERE serverid = ";
+		$sql .= $this->quote( $this->serverid, 'integer' );
+		$q = $this->query( $sql );
 		$channels = array();
 		while( $row = $q->fetchrow() ) {
 			$channels[] = array( 'id' => $row[0],

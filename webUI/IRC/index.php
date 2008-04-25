@@ -134,7 +134,6 @@ ENDHTML;
 		echo "</table>";
 		echo "<select name='maptype'>";
 		echo "<option value='activity'>Activity</option>";
-		echo "<option value='histogram'>Histogram</option>";
 		echo "</select>";
 
 		echo "<input type=submit value='Generate image'></form>";

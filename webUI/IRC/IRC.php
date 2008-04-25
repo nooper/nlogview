@@ -39,7 +39,7 @@ EOF;
 	{
 		$logdata = array();
 		$q = $this->query('SELECT * FROM nlogview_logs ORDER BY submittime DESC');
-		while($row = $q->fetchRow(DB_FETCHMODE_ASSOC))
+		while($row = $q->fetchRow(MDB2_FETCHMODE_ASSOC))
 		{
 			$logdata[] = array(
 				'name' => $row['name'],
@@ -55,7 +55,7 @@ EOF;
 	{
 		$serverdata = array();
 		$q = $this->query('SELECT * FROM nlogview_servers');
-		while($row = $q->fetchRow(DB_FETCHMODE_ASSOC))
+		while($row = $q->fetchRow(MDB2_FETCHMODE_ASSOC))
 		{
 			$serverdata[] = array(
 				'name' => $row['name'],
@@ -68,7 +68,10 @@ EOF;
 
 	public function addServer($name, $address)
 	{
-		$q = $this->query('INSERT INTO nlogview_servers (name, address) values (?,?)', array($name, $address));
+		$sql = 'INSERT INTO nlogview_servers(name, address) VALUES('
+			. $this->quote($name, 'text') . ','
+			. $this->quote($address, 'text') . ')';
+		$q = $this->exec( $sql );
 	}
 
 	public function filterByID($nickid = 0, $userid = 0, $hostid = 0)
@@ -112,30 +115,33 @@ EOF;
 
 		if( strlen($nickname) > 0 ) {
 			if( $nicktype == 'is' ) {
-				$filter[] = " n.name = ? ";
+				$where = " n.name = ";
 			}
 			elseif( $nicktype == 'like' ) {
-				$filter[] = " n.name like ? ";
+				$where = " n.name like ";
 			}
-			$data[] = $nickname;
+			$where .= $this->quote( $nickname, 'text' );
+			$filter[] = $where;
 		}
 		if( strlen($username) > 0 ) {
 			if( $usertype == 'is' ) {
-				$filter[] = " u.name = ? ";
+				$where = " u.name = ";
 			}
 			elseif( $usertype == 'like' ) {
-				$filter[] = " u.name like ? ";
+				$where = " u.name like ";
 			}
-			$data[] = $username;
+			$where .= $this->quote( $username, 'text' );
+			$filter[] = $where;
 		}
 		if( strlen($hostname) > 0 ) {
 			if( $hosttype == 'is' ) {
-				$filter[] = " h.name = ? ";
+				$where = " h.name = ";
 			}
 			elseif( $hosttype == 'like' ) {
-				$filter[] = " h.name like ? ";
+				$where = " h.name like ";
 			}
-			$data[] = $hostname;
+			$where .= $this->quote( $hostname, 'text' );
+			$filter[] = $where;
 		}
 		
 		foreach( $filter as $cond ) {
@@ -147,13 +153,13 @@ EOF;
 		$sql .= "GROUP BY i.ircuserid ";
 		$sql .= "ORDER BY count(a.activityid) DESC";
 
-		return $this->filterSQL2Array($sql, $data);
+		return $this->filterSQL2Array($sql);
 	}
 
-	private function filterSQL2Array( $sql, $data = array() ) {
-		$q = $this->query($sql, $data);
+	private function filterSQL2Array( $sql ) {
+		$q = $this->query($sql);
 		$retval = array();
-		while($row = $q->fetchRow(DB_FETCHMODE_ASSOC))
+		while($row = $q->fetchRow(MDB2_FETCHMODE_ASSOC))
 		{
 			$retval[] = array(
 				'ircuserid' => $row['ircuserid'],
@@ -255,13 +261,11 @@ EOF;
 		imagestring($image, $font, $imagewidth - $stamplen - 1, $imageheight - $cellheight, $stampstr, $white);
 
 		//the actual work
-		$sql = "select round(log(?,count(activityid)))+1, ? * round(unix_timestamp(activitytime) / ?) ";
+		$sql = "select round(log($logbase,count(activityid)))+1, $celltime * round(unix_timestamp(activitytime) / $celltime) ";
 		$sql .= "from nlogview_activity ";
 		$sql .= $wherecondition;
-		$sql .= "group by round(unix_timestamp(activitytime)/?) ";
-		$sql .= "order by round(unix_timestamp(activitytime)/?)";
-		$data = array( $logbase, $celltime, $celltime, $celltime, $celltime);
-		$q = $this->query($sql, $data);
+		$sql .= "group by round(unix_timestamp(activitytime)/$celltime) ";
+		$q = $this->query($sql);
 		while($row = $q->fetchrow()){
 			$index = ($row[1] - $unix_begin_time) / $celltime;
 			$x = $xoffset + fmod($index, $cellsperrow);
@@ -290,37 +294,6 @@ EOF;
 		return $image;
 	}
 
-	public function getHistogram ( $userids, $interval = 3600 ) {
-		$sql = "select c, count(c) from ";
-		$sql .= "( select count(activityid) c, ? * round(unix_timestamp(activitytime) / ?) time ";
-		$sql .= "from nlogview_activity ";
-		$sql .= "where ircuserid in ( ? ) ";
-		$sql .= "group by round(unix_timestamp(activitytime) / ?) ) o ";
-		$sql .= "group by c ";
-		$sql .= "order by c";
-		$data = array( $interval, $interval, $userids, $interval );
-		$q = $this->query($sql, $data);
-		while($row = $q->fetchrow()){
-			$lines[$row[0]] = $row[1];
-			$total += $row[1];
-			$last = $row[0];
-		}
-
-		$image = imagecreate( $last * 10, 110 );
-		$white = imagecolorallocate($image, 255, 255, 255);
-		$red = imagecolorallocate($image, 255, 0, 0);
-		$black = imagecolorallocate($image, 0, 0, 0);
-
-		for( $x = 1; $x <= $last; $x++ ) {
-			if( isset($lines[$x]) )
-				$lines[$x] = round( ($lines[$x] / $total) * 100);
-			else
-				$lines[$x] = 0;
-			$rc = imagefilledrectangle( $image, ($x * 10) - 10, 110, $x * 10, 110 - $lines[$x], $red );
-		}
-
-		return $image;
-	}
 }
 
 ?>

@@ -11,7 +11,9 @@ class Channel extends Server {
 
 	public function __construct( $channelid ) {
 		$this->channelid = $channelid;
-		$q = $this->query("SELECT serverid, name FROM nlogview_channels WHERE channelid = ?", array($channelid));
+		$sql = "SELECT serverid, name FROM nlogview_channels WHERE channelid = ";
+		$sql .= $this->quote( $channelid, 'integer' );
+		$q = $this->query( $sql );
 		$row = $q->fetchrow();
 		$this->serverid = $row[0];
 		$this->channelname = $row[1];

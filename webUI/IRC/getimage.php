@@ -10,12 +10,6 @@ case 'activity':
 	$im = $mapper->getUserActivityMap($_GET['ids']);
 	break;
 
-case 'histogram':
-	include('IRC.php');
-	$mapper = new IRC;
-	$im = $mapper->getHistogram($_GET['ids']);
-	break;
-
 case 'chandetail':
 	include('Channel.php');
 	$mapper = new Channel($_GET['ids']);;

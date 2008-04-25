@@ -1,11 +1,10 @@
 <?php
-
-require_once('DB.php');
+require_once('MDB2.php');
 
 class dbclient {
-	private $db; 
+	public $db;
 
-	private function connect()
+	public function connect()
 	{
 		$dbhost="localhost";
 		$dbname="nooper";
@@ -13,32 +12,38 @@ class dbclient {
 		$dbpass="nothing";
 
 		$sqlstr = "mysql://$dbuser:$dbpass@$dbhost/$dbname";
-		$this->db = DB::connect($sqlstr);
-		if (DB::isError($this->db)) { die("$sqlstr :: Can't connect: " . $this->db->getMessage( )); }
+		$this->db =& MDB2::connect($sqlstr);
+		if (PEAR::isError($this->db)) { die("$sqlstr :: Can't connect: " . $this->db->getMessage( )); }
 	}
 
-	public function query( $sql, $data = array() ) {
+	public function query( $sql ) {
 		if(is_null($this->db))
 			$this->connect();
-		$q = $this->db->query($sql, $data);
-		if (DB::isError($q)) { 
-			die("SQL Error: " . $q->getDebugInfo( )); 
-		}
-		else {
+		$q =& $this->db->query($sql);
+		if (PEAR::isError($q)) { 
+			die("SQL Error: " . $q->getMessage( )); 
+		} else {
 			return $q;
 		}
 	}
 
-	public function unbuffered_query( $sql, $data = array() ) {
+	public function exec( $sql ) {
 		if(is_null($this->db))
 			$this->connect();
-		$q = mysql_unbuffered_query($sql, $this->db);
-		if (DB::isError($q)) { 
-			die("SQL Error: " . $q->getDebugInfo( )); 
-		}
-		else {
+		$q =& $this->db->exec($sql);
+		if (PEAR::isError($q)) { 
+			die("SQL Error: " . $q->getMessage( )); 
+		} else {
 			return $q;
 		}
 	}
+
+	public function quote( $var, $type ) {
+		if( is_null( $this->db ) ) {
+			$this->connect();
+		}
+		return $this->db->quote( $var, $type );
+	}
+
 }
 ?>

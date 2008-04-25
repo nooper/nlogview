@@ -14,7 +14,9 @@ class Logs extends IRC {
 
 	public function getLogData($logid) {
 		if( count($this->logData) == 0 ) {
-			$q = $this->query("SELECT * FROM nlogview_logs WHERE logid=?", array($logid));
+			$sql = "SELECT * FROM nlogview_logs WHERE logid = ";
+			$sql .= $this->quote($logid, 'integer');
+			$q = $this->query( $sql );
 			$row = $q->fetchrow();
 			$this->logData = array(
 				'name' => $row[1],
@@ -40,19 +42,19 @@ class Logs extends IRC {
 	}
 
 	public function getMinTime($logid) {
-		$q = $this->query("SELECT min(activitytime) FROM nlogview_activity WHERE logid=?", array($logid));
+		$q = $this->query("SELECT min(activitytime) FROM nlogview_activity WHERE logid=" . $this->quote($logid, 'integer'));
 		$row = $q->fetchrow();
 		return $row[0];
 	}
 
 	public function getMaxTime($logid) {
-		$q = $this->query("SELECT max(activitytime) FROM nlogview_activity WHERE logid=?", array($logid));
+		$q = $this->query("SELECT max(activitytime) FROM nlogview_activity WHERE logid=" . $this->quote($logid, 'integer'));
 		$row = $q->fetchrow();
 		return $row[0];
 	}
 
 	public function getActivityCount($logid) {
-		$q = $this->query("SELECT count(activityid) FROM nlogview_activity WHERE logid=?", array($logid));
+		$q = $this->query("SELECT count(activityid) FROM nlogview_activity WHERE logid=" . $this->quote($logid, 'integer'));
 		$row = $q->fetchrow();
 		return $row[0];
 	}
@@ -60,7 +62,7 @@ class Logs extends IRC {
 	public function getChannelList() {
 		$q = $this->query("SELECT DISTINCT a.channelid, c.name FROM nlogview_activity a
 			INNER JOIN nlogview_channels c on a.channelid = c.channelid
-			WHERE logid=?", array($this->logid));
+			WHERE logid=" . $this->quote($this->logid, 'integer'));
 		$channels = array();
 		while( $row = $q->fetchrow() ) {
 			$channels[] = array(
