@@ -267,6 +267,7 @@ EOF;
 		$sql .= "group by round(unix_timestamp(activitytime)/$celltime) ";
 		$q = $this->query($sql);
 		while($row = $q->fetchrow()){
+			set_time_limit(30);
 			$index = ($row[1] - $unix_begin_time) / $celltime;
 			$x = $xoffset + fmod($index, $cellsperrow);
 			$x2 = $x * $cellwidth;
