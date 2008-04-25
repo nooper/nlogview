@@ -30,7 +30,7 @@ elseif( $_GET['action'] == 'genmap' )
 		$len = strlen($posted);
 		$posted = substr($posted, 0, $len - 1);
 
-		echo "<img src=genmap.php?type=" . $_POST['maptype'] . "&ids=$posted>";
+		echo "<img src=getimage.php?type=" . $_POST['maptype'] . "&ids=$posted>";
 	}
 }
 elseif( $_GET['action'] == 'showservers' )

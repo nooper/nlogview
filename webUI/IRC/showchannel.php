@@ -2,8 +2,12 @@
 
 require('Channel.php');
 
-$thispage = new Channel( $_GET['channelid'] );
+$channelid = $_GET['channelid'];
+$thispage = new Channel( $channelid );
 $thispage->printHeader();
+
+echo "<img src='getimage.php?type=chandetail&ids=$channelid'>";
+
 $thispage->printFooter();
 
 ?>

@@ -21,13 +21,19 @@ class Channel extends Server {
 
 	public function printHeader() {
 		parent::printHeader();
-		echo "<table><tr><td><b>Channels</b> :: $this->channelname :: ";
+		echo "<table><tr><td><b>Channels</b> :: <a href='" . $this->mypath . "'>$this->channelname</a>";
 		echo "</td></tr><tr><td>";
 	}
 
 	public function printFooter() {
 		echo "</td></tr></table>";
 		parent::printFooter();
+	}
+
+	public function getDetailmap( ) {
+		$wherecondition = " WHERE channelid = $this->channelid ";
+		$image = $this->getActivityMap( $wherecondition, 3 );
+		return $image;
 	}
 
 

@@ -197,15 +197,7 @@ EOF;
 		return $cur;
 	}
 
-	public function getActivityMap( $userids, $cellheight = 11, $cellwidth = 1, $celltime = 120, $cellsperrow = 0, $logbase = 2 ) {
-
-		// first, ensure input is clean
-		$idarray = explode( ",", $userids );
-		foreach( $idarray as $tempid ) {
-			if ( !is_numeric( $tempid ) ) {
-				die("Bad input to IRC::getActvitiyMap()");
-			}
-		}
+	protected function getActivityMap( $wherecondition, $logbase = 2, $cellheight = 11, $cellwidth = 1, $celltime = 120, $cellsperrow = 0 ) {
 
 		if ( $cellsperrow == 0 ) {
 			$cellsperrow = 86400 / $celltime; //default to 1 day = 1 row
@@ -217,7 +209,7 @@ EOF;
 		//Get first and last date for image map
 		$sql = "select unix_timestamp(min(activitytime)), unix_timestamp(max(activitytime)) ";
 		$sql .= "from nlogview_activity ";
-		$sql .= "where ircuserid in ($userids)";
+		$sql .= $wherecondition;
 		$q = $this->query($sql);
 		$row = $q->fetchrow();
 		$unix_begin_time = gmmktime(0, 0, 0, gmdate('m', $row[0]), gmdate('d', $row[0]), gmdate('Y', $row[0]));
@@ -265,7 +257,7 @@ EOF;
 		//the actual work
 		$sql = "select round(log(?,count(activityid)))+1, ? * round(unix_timestamp(activitytime) / ?) ";
 		$sql .= "from nlogview_activity ";
-		$sql .= "where ircuserid in ($userids) ";
+		$sql .= $wherecondition;
 		$sql .= "group by round(unix_timestamp(activitytime)/?) ";
 		$sql .= "order by round(unix_timestamp(activitytime)/?)";
 		$data = array( $logbase, $celltime, $celltime, $celltime, $celltime);
@@ -281,6 +273,20 @@ EOF;
 			$rc = imagefilledrectangle( $image, $x1, $y1, $x2, $y2 , $white );
 		}
 
+		return $image;
+	}
+
+	public function getUserActivityMap( $userids ) {
+
+		// first, ensure input is clean
+		$idarray = explode( ",", $userids );
+		foreach( $idarray as $tempid ) {
+			if ( !is_numeric( $tempid ) ) {
+				die("Bad input to IRC::getUserActvitiyMap()");
+			}
+		}
+		$wherecondition = " WHERE ircuserid in ($userids) ";
+		$image = $this->getActivityMap( $wherecondition );
 		return $image;
 	}
 

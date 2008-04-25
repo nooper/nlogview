@@ -28,5 +28,17 @@ class dbclient {
 			return $q;
 		}
 	}
+
+	public function unbuffered_query( $sql, $data = array() ) {
+		if(is_null($this->db))
+			$this->connect();
+		$q = mysql_unbuffered_query($sql, $this->db);
+		if (DB::isError($q)) { 
+			die("SQL Error: " . $q->getDebugInfo( )); 
+		}
+		else {
+			return $q;
+		}
+	}
 }
 ?>
