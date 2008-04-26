@@ -62,11 +62,18 @@ proc event_kick { nick uh handle chan target reason } {
 
 proc insert_event { nick uh chan activitytype } {
 	global db_handle server serveraddress;
+
+	set sql "START TRANSACTION";
+	mysqlexec $db_handle $sql;
+
 	set ircuserid [getIRCUserID $nick $uh];
 	set serverid [getServerID]
 	set channelid [getChannelID $chan $serverid]
 	set logid [getLogID]
 	set sql "INSERT INTO nlogview_activity(channelid, ircuserid, logid, activitytype, activitytime) VALUES($channelid, $ircuserid, $logid, $activitytype, now())";
+	mysqlexec $db_handle $sql;
+
+	set sql "COMMIT";
 	mysqlexec $db_handle $sql;
 }
 
