@@ -295,6 +295,84 @@ EOF;
 		return $image;
 	}
 
+	public function exploreRelatedUsers( $ircuserids ) {
+		//Create table
+		$tablename = uniqid("explore");
+		$sql = "CREATE TABLE $tablename LIKE nlogview_ircusers";
+		$q = $this->exec($sql);
+
+		//Insert seed rows
+		$sql = "INSERT INTO $tablename SELECT * FROM nlogview_ircusers WHERE ircuserid in ( $ircuserids )";
+		$q = $this->exec($sql);
+
+		//Iterative process to explore related users
+		//IRC users are composed of 3 parts. Nickname, Ident and Hostname
+		//This process will pick two parts, and add ircusers that have a different third part
+		//First it'll pick the nickname and idents already in the temp table and add all ircusers with a different hostname
+		//Then repeat with nick and host to add users with a different ident
+		//and so on until it cannot find any more rows to add
+
+		//The insert queries:
+		$nicksql = "insert into $tablename select distinct i.* from nlogview_ircusers i ";
+		$nicksql .= "inner join $tablename e on i.userid = e.userid and i.hostid = e.hostid ";
+		$nicksql .= "where i.ircuserid not in (select ircuserid from $tablename)";
+
+		$identsql = "insert into $tablename select distinct i.* from nlogview_ircusers i ";
+		$identsql .= "inner join $tablename e on i.nickid = e.nickid and i.hostid = e.hostid ";
+		$identsql .= "where i.ircuserid not in (select ircuserid from $tablename)";
+
+		$hostsql = "insert into $tablename select distinct i.* from nlogview_ircusers i ";
+		$hostsql .= "inner join $tablename e on i.userid = e.userid and i.nickid = e.nickid ";
+		$hostsql .= "where i.ircuserid not in (select ircuserid from $tablename)";
+
+		$nickbit = 1;
+		$identbit = 2;
+		$hostbit = 4;
+
+		$bitmask = $nickbit | $identbit | $hostbit;
+
+		//Technically, its possible this can iterate until the whole table has been copied
+		while( $bitmask > 0 ) {
+			if( $bitmask & $nickbit ) {
+				$bitmask = $bitmask & ~$nickbit;
+				$q = $this->exec( $nicksql );
+				if( $q > 0) {
+					$bitmask = $bitmask | $identbit | $hostbit;
+				}
+			}
+			if( $bitmask & $identbit ) {
+				$bitmask = $bitmask & ~$identbit;
+				$q = $this->exec( $identsql );
+				if( $q > 0) {
+					$bitmask = $bitmask | $nickbit | $hostbit;
+				}
+			}
+			if( $bitmask & $hostbit ) {
+				$bitmask = $bitmask & ~$hostbit;
+				$q = $this->exec( $hostsql );
+				if( $q > 0) {
+					$bitmask = $bitmask | $nickbit | $identbit;
+				}
+			}
+		}
+
+		$sql = "SELECT n.name nickname, u.name username, h.name hostname, i.ircuserid, i.nickid, i.userid, i.hostid, count(a.activityid) c ";
+		$sql .= "FROM $tablename i ";
+		$sql .= "INNER JOIN nlogview_nicks n ON i.nickid = n.nickid ";
+		$sql .= "INNER JOIN nlogview_idents u ON i.userid = u.userid ";
+		$sql .= "INNER JOIN nlogview_hosts h ON i.hostid = h.hostid ";
+		$sql .= "INNER JOIN nlogview_activity a ON i.ircuserid = a.ircuserid ";
+		$sql .= "GROUP BY i.ircuserid ";
+		$sql .= "ORDER BY count(a.activityid) DESC";
+
+		$results =  $this->filterSQL2Array($sql);
+
+		$sql = "DROP TABLE $tablename";
+		$q = $this->exec( $sql );
+
+		return $results;
+	}
+
 }
 
 ?>
