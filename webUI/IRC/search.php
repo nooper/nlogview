@@ -27,34 +27,27 @@ case 'search':
 	break;
 
 case 'searchSubmit':
+	$ids = NULL;
+	if( isset( $_POST['ircuserid'] ) ) {
+		$posted = $_POST['ircuserid'];
+		foreach($posted as $id){
+			$ids .= $id . ",";
+		}
+		$len = strlen($ids);
+		$ids = substr($ids, 0, $len - 1);
+	}
 
 	switch ($_POST['submitAction']) {
-		
 	case 'explore':
-		if( isset( $_POST['ircuserid'] ) ) {
-			$ids = $_POST['ircuserid'];
-			$posted = "";
-			foreach($ids as $id){
-				$posted .= $id . ",";
-			}
-			$len = strlen($posted);
-			$posted = substr($posted, 0, $len - 1);
-			$matches = $thispage->exploreRelatedUsers( $posted );
+		if( !is_null( $ids ) ) {
+			$matches = $thispage->exploreRelatedUsers( $ids );
 			showResult( $matches );
 		}
 		break;
 
 	case 'Generate image':
-		if( isset( $_POST['ircuserid'] ) ) {
-			$ids = $_POST['ircuserid'];
-			$posted = "";
-			foreach($ids as $id){
-				$posted .= $id . ",";
-			}
-			$len = strlen($posted);
-			$posted = substr($posted, 0, $len - 1);
-
-			echo "<img src=getimage.php?type=" . $_POST['maptype'] . "&ids=$posted>";
+		if( !is_null( $ids ) ) {
+			echo "<img src=getimage.php?type=" . $_POST['maptype'] . "&ids=$ids>";
 		}
 		break;
 	}
