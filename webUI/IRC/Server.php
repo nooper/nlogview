@@ -18,7 +18,7 @@ class Server extends IRC {
 
 	public function printHeader() {
 		parent::printHeader();
-		echo "<table><tr><td><b>Servers</b> :: <a href='" . $this->mypath . "'>$this->servername</a> :: ";
+		echo "<table><tr><td><b>Servers</b> :: " . $this->servername . " :: ";
 		echo "<a href=" . $this->mypath . "&action=showchannels>Channels</a>";
 		echo "</td></tr><tr><td>";
 	}

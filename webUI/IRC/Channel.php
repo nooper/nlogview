@@ -23,7 +23,9 @@ class Channel extends Server {
 
 	public function printHeader() {
 		parent::printHeader();
-		echo "<table><tr><td><b>Channels</b> :: <a href='" . $this->mypath . "'>$this->channelname</a>";
+		echo "<table><tr><td><b>Channels</b> :: " . $this->channelname;
+		echo " :: <a href=\"?channelid=" . $this->channelid . "&action=showmap\">Activity Map</a> | ";
+		echo "<a href=\"?channelid=" . $this->channelid . "&action=showlogs\">Logs</a>";
 		echo "</td></tr><tr><td>";
 	}
 
@@ -38,6 +40,8 @@ class Channel extends Server {
 		return $image;
 	}
 
+	public function getLogs() {
+	}
 
 }
 
