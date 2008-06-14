@@ -88,5 +88,5 @@ foreign key (logid) references nlogview_logs(logid)
 create table nlogview_static
 (
 keyname varchar(255) primary key,
-value int
-) engine=innodb;
+value text
+) engine=myisam;
