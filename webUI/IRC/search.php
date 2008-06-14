@@ -47,7 +47,9 @@ case 'searchSubmit':
 
 	case 'Generate image':
 		if( !is_null( $ids ) ) {
-			echo "<img src=getimage.php?type=" . $_POST['maptype'] . "&ids=$ids>";
+			$key = uniqid();
+			$thispage->static_put( $key, $ids );
+			echo "<img src=getimage.php?type=" . $_POST['maptype'] . "&ids=$key>";
 		}
 		break;
 	}

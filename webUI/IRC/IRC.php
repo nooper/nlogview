@@ -17,9 +17,9 @@ class IRC extends nLogView
 			<tr>
 			<td>
 			<b>IRC</b>
-			:: <a href="$this->basepath/IRC/search.php">Search</a>
+			:: <a href="{$this->basepath}IRC/search.php">Search</a>
 			| <a href="$this->mypath?action=showservers">Servers</a>
-			| <a href="$this->basepath/IRC/showlog.php?action=showlogs">Logs</a>
+			| <a href="{$this->basepath}IRC/showlog.php?action=showlogs">Logs</a>
 			<tr><td>
 EOF;
 
@@ -281,8 +281,9 @@ EOF;
 		return $image;
 	}
 
-	public function getUserActivityMap( $userids ) {
-
+	public function getUserActivityMap( $key ) {
+		$userids = $this->static_get( $key );
+		$this->static_delete( $key );
 		// first, ensure input is clean
 		$idarray = explode( ",", $userids );
 		foreach( $idarray as $tempid ) {

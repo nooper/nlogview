@@ -7,7 +7,7 @@ class dbclient {
 	public function connect()
 	{
 		$dbhost="localhost";
-		$dbname="nooper";
+		$dbname="nlogview";
 		$dbuser="nooper";
 		$dbpass="nothing";
 

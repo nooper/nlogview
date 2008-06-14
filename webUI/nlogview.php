@@ -74,4 +74,22 @@ EOF;
 	}
 
 
+	public function static_get( $key ) {
+		$sql = "SELECT value FROM nlogview_static WHERE keyname = " . $this->quote( $key, 'text' );
+		$q = $this->query( $sql );
+		$row = $q->fetchrow();
+		return $row[0];
+	}
+
+	public function static_put( $key, $value ) {
+		$sql = "INSERT INTO nlogview_static(keyname, value) VALUES( "
+			. $this->quote( $key, 'text' ) . ", " . $this->quote( $value, 'text' ) . ")";
+		$this->exec($sql);
+	}
+
+	public function static_delete( $key ) {
+		$sql = "DELETE FROM nlogview_static WHERE keyname = " . $this->quote( $key, 'text' );
+		$this->exec( $sql );
+	}
+
 }
