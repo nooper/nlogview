@@ -18,8 +18,8 @@ class IRC extends nLogView
 			<td>
 			<b>IRC</b>
 			:: <a href="{$this->basepath}IRC/search.php">Search</a>
-			| <a href="$this->mypath?action=showservers">Servers</a>
-			| <a href="{$this->basepath}IRC/showlog.php?action=showlogs">Logs</a>
+			| <a href="{$this->mypath}?action=showservers">Servers</a>
+			| <a href="{$this->mypath}?action=showlogs">Logs</a>
 			<tr><td>
 EOF;
 

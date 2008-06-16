@@ -6,16 +6,27 @@ class Logs extends IRC {
 
 	private $mypath;
 	private $logData;
+	private $logid;
 
-	public function __construct() {
+	public function __construct( $logid ) {
 		parent::__construct();
 		$this->mypath = $this->basepath . "IRC/showlog.php";
+		$this->logid = $logid;
+			$sql = "SELECT * FROM nlogview_logs WHERE logid = ";
+			$sql .= $this->quote($this->logid, 'integer');
+			$q = $this->query( $sql );
+			$row = $q->fetchrow();
+			$this->logData = array(
+				'name' => $row[1],
+				'source' => $row[2],
+				'timestamp' => $row[3]
+			);
 	}
 
-	public function getLogData($logid) {
+	public function getLogData() {
 		if( count($this->logData) == 0 ) {
 			$sql = "SELECT * FROM nlogview_logs WHERE logid = ";
-			$sql .= $this->quote($logid, 'integer');
+			$sql .= $this->quote($this->logid, 'integer');
 			$q = $this->query( $sql );
 			$row = $q->fetchrow();
 			$this->logData = array(
@@ -29,9 +40,8 @@ class Logs extends IRC {
 
 	public function printHeader() {
 		parent::printHeader();
-		echo "<table><tr><td><b>Logs</b> ::";
-		echo " <a href=$this->mypath?action=showlogs>List</a> |";
-		echo " <a href=$this->mypath?action=addlog>Add</a>";
+		echo "<table><tr><td><b>Logs</b> :: ";
+		echo $this->logData['name'];
 		echo "</td></tr>";
 		echo "<tr><td>";
 	}
@@ -41,20 +51,20 @@ class Logs extends IRC {
 		parent::printFooter();
 	}
 
-	public function getMinTime($logid) {
-		$q = $this->query("SELECT min(activitytime) FROM nlogview_activity WHERE logid=" . $this->quote($logid, 'integer'));
+	public function getMinTime() {
+		$q = $this->query("SELECT min(activitytime) FROM nlogview_activity WHERE logid=" . $this->quote($this->logid, 'integer'));
 		$row = $q->fetchrow();
 		return $row[0];
 	}
 
-	public function getMaxTime($logid) {
-		$q = $this->query("SELECT max(activitytime) FROM nlogview_activity WHERE logid=" . $this->quote($logid, 'integer'));
+	public function getMaxTime() {
+		$q = $this->query("SELECT max(activitytime) FROM nlogview_activity WHERE logid=" . $this->quote($this->logid, 'integer'));
 		$row = $q->fetchrow();
 		return $row[0];
 	}
 
-	public function getActivityCount($logid) {
-		$q = $this->query("SELECT count(activityid) FROM nlogview_activity WHERE logid=" . $this->quote($logid, 'integer'));
+	public function getActivityCount() {
+		$q = $this->query("SELECT count(activityid) FROM nlogview_activity WHERE logid=" . $this->quote($this->logid, 'integer'));
 		$row = $q->fetchrow();
 		return $row[0];
 	}
