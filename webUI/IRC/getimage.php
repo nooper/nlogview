@@ -18,8 +18,8 @@ case 'chandetail':
 
 }
 
-header('Content-type: image/gif');
-imagegif($im);
+header('Content-type: image/png');
+imagepng($im);
 imagedestroy($im);
 
 ?>
