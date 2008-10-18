@@ -41,6 +41,18 @@ class Channel extends Server {
 	}
 
 	public function getLogs() {
+		$logdata = array();
+		$q = $this->query("select distinct l.* from nlogview_logs l inner join nlogview_activity a on l.logid = a.logid and a.channelid = $this->channelid");
+		while($row = $q->fetchRow(MDB2_FETCHMODE_ASSOC))
+		{
+			$logdata[] = array(
+				'name' => $row['name'],
+				'source' => $row['source'],
+				'timestamp' => $row['submittime'],
+				'logid' => $row['logid']
+			);
+		}
+		return $logdata;
 	}
 
 }

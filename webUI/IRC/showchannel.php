@@ -16,6 +16,15 @@ case "showmap":
 	break;
 
 case "showlogs":
+	global $thispage, $channelid;
+	global $thispage;
+	$logdata = $thispage->getLogs();
+	echo "<br/><table border=1><tr><th>Name</th><th>Source</th><th>Timestamp</th></tr>";
+	foreach($logdata as $rowdata)
+	{
+		echo  "<tr><td><a href='showlog.php?action=getdetail&logid=" . $rowdata['logid'] . "'>" .  $rowdata['name'] . "</a></td><td>" . $rowdata['source'] . "</td><td>" . $rowdata['timestamp'] . "</td></tr>";
+	}
+	echo "</table>";
 	break;
 
 }
