@@ -17,7 +17,6 @@ case "showmap":
 
 case "showlogs":
 	global $thispage, $channelid;
-	global $thispage;
 	$logdata = $thispage->getLogs();
 	echo "<br/><table border=1><tr><th>Name</th><th>Source</th><th>Timestamp</th></tr>";
 	foreach($logdata as $rowdata)
