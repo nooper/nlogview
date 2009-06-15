@@ -81,10 +81,12 @@ EOF;
 		return $row[0];
 	}
 
-	public function static_put( $key, $value ) {
+	public function static_put( $value ) {
+		$key = uniqid();
 		$sql = "INSERT INTO nlogview_static(keyname, value) VALUES( "
 			. $this->quote( $key, 'text' ) . ", " . $this->quote( $value, 'text' ) . ")";
 		$this->exec($sql);
+		return $key;
 	}
 
 	public function static_delete( $key ) {

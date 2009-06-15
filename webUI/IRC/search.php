@@ -47,9 +47,21 @@ case 'searchSubmit':
 
 	case 'Generate image':
 		if( !is_null( $ids ) ) {
-			$key = uniqid();
-			$thispage->static_put( $key, $ids );
+			$key = $thispage->static_put( $ids );
 			echo "<img src=getimage.php?type=" . $_POST['maptype'] . "&ids=$key>";
+		}
+		break;
+
+	case 'relation':
+		if (!is_null( $ids ) ) {
+			echo "<table border=1>";
+			$relarray = $thispage->getUserRelations( $ids );
+			foreach($relarray as $reluser) {
+				echo "<tr><td>";
+				echo "<a href='?action=search&nicksearch=is&nickvalue=" . $reluser[0] . "'>" . $reluser[0] . "</a>";
+				echo "</td><td>" . $reluser[1] . "</td></tr>";
+			}
+			echo "</table>";
 		}
 		break;
 	}
@@ -126,7 +138,7 @@ function showResult( $matches ) {
 
 	echo "</table>";
 	echo "<input type=submit name=submitAction value=explore><br>";
-
+	echo "<input type=submit name=submitAction value=relation><br>";
 	echo "<select name='maptype'>";
 	echo "<option value='activity'>Activity</option>";
 	echo "</select>";

@@ -374,6 +374,20 @@ EOF;
 		return $results;
 	}
 
+	public function getUserRelations( $ids ) {
+		$result = array();
+		$sql = "SELECT n.name, sum(r.relation) FROM nlogview_ircuser_relation r ";
+		$sql .= "INNER JOIN nlogview_ircusers i on r.toircuser = i.ircuserid ";
+		$sql .= "INNER JOIN nlogview_nicks n on i.nickid = n.nickid ";
+		$sql .= "WHERE r.fromircuser IN ( $ids ) ";
+		$sql .= "GROUP BY n.name ORDER BY sum(r.relation) DESC ";
+		$q = $this->query( $sql );
+		while( $row = $q->fetchrow() ) {
+			$result[] = array( $row[0], $row[1] );
+		}
+		return $result;
+	}
+
 }
 
 ?>
