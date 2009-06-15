@@ -91,6 +91,19 @@ keyname varchar(255) primary key,
 value text
 ) engine=myisam;
 
+create table nlogview_ircuser_relation(
+relationid int(10) unsigned not null auto_increment primary key,
+fromircuser int(10) unsigned not null,
+toircuser int(10) unsigned not null,
+channelid int(10) unsigned not null,
+relation int(10) unsigned not null,
+index(fromircuser, toircuser, relation)
+);
+
+
+
+
+
 delimiter //
 create procedure explore(IN tmptable varchar(255))
 begin
