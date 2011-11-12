@@ -55,7 +55,7 @@ class irssiparser extends parser
 
 	private function addChannel($serverid, $channelname)
 	{
-		$q = $this->query('SELECT channelid from nlogview_channels where serverid='
+		$q = $this->query('SELECT channelid from irc_channels where serverid='
 			. $this->quote($serverid, 'integer') . ' and name='
 			. $this->quote($channelname, 'text'));
 
@@ -66,7 +66,7 @@ class irssiparser extends parser
 		}
 		elseif($q->numrows() == 0)
 		{
-			$q = $this->exec('INSERT INTO nlogview_channels(serverid, name) values('
+			$q = $this->exec('INSERT INTO irc_channels(serverid, name) values('
 				. $this->quote($serverid, 'integer') . ','
 				. $this->quote($channelname, 'text') . ')');
 			return $this->addChannel($serverid, $channelname);
@@ -79,10 +79,10 @@ class irssiparser extends parser
 
 	private function addLogRecord($friendlyname, $shortpath)
 	{
-		$q = $this->exec("INSERT INTO nlogview_logs(name, source) values("
+		$q = $this->exec("INSERT INTO irc_logs(name, source) values("
 			. $this->quote($friendlyname, 'text') . ','
 			. $this->quote($shortpath, 'text') . ')');
-		$row = $this->query("SELECT max(logid) from nlogview_logs")->fetchrow();
+		$row = $this->query("SELECT max(logid) from irc_logs")->fetchrow();
 		return $row[0];
 	}
 
@@ -94,7 +94,7 @@ class irssiparser extends parser
 
 	private function insertActivity($ircuserid, $type, $time)
 	{
-		$sql = 'INSERT INTO nlogview_activity( channelid, ircuserid, logid, activitytype, activitytime ) VALUES('
+		$sql = 'INSERT INTO irc_activity( channelid, ircuserid, logid, activitytype, activitytime ) VALUES('
 			. $this->quote( $this->channelid, 'integer' ) . ','
 			. $this->quote( $ircuserid, 'integer' ) . ','
 			. $this->quote( $this->logid, 'integer' ) . ','
@@ -135,7 +135,7 @@ class irssiparser extends parser
 		}
 		else
 		{
-			$nickid = $this->selectInsert("nlogview_nicks", "nickid", "name", $nick);
+			$nickid = $this->selectInsert("irc_nicks", "nickid", "name", $nick);
 			$this->nickid[$nick] = $nickid;
 		}
 		return $nickid;
@@ -150,7 +150,7 @@ class irssiparser extends parser
 		}
 		else
 		{
-			$userid = $this->selectInsert("nlogview_idents", "userid", "name", $user);
+			$userid = $this->selectInsert("irc_idents", "userid", "name", $user);
 			$this->userid[$user] = $userid;
 		}
 		return $userid;
@@ -165,7 +165,7 @@ class irssiparser extends parser
 		}
 		else
 		{
-			$hostid = $this->selectInsert("nlogview_hosts", "hostid", "name", $host);
+			$hostid = $this->selectInsert("irc_hosts", "hostid", "name", $host);
 			$this->hostid[$host] = $hostid;
 		}
 		return $hostid;
@@ -181,7 +181,7 @@ class irssiparser extends parser
 		}
 		else
 		{
-			$sql = "SELECT ircuserid FROM nlogview_ircusers WHERE nickid=$nickid AND userid=$userid AND hostid=$hostid";
+			$sql = "SELECT ircuserid FROM irc_ircusers WHERE nickid=$nickid AND userid=$userid AND hostid=$hostid";
 			$q = $this->query($sql);
 			if( $q->numrows() == 1 )
 			{
@@ -191,7 +191,7 @@ class irssiparser extends parser
 			}
 			else
 			{
-				$q = $this->exec("INSERT INTO nlogview_ircusers(nickid, userid, hostid) VALUES($nickid,$userid,$hostid)");
+				$q = $this->exec("INSERT INTO irc_ircusers(nickid, userid, hostid) VALUES($nickid,$userid,$hostid)");
 				return $this->getIRCUserID($nickid, $userid, $hostid);
 			}
 		}
@@ -199,15 +199,15 @@ class irssiparser extends parser
 
 	private function setUser( $ircuserid, $user )
 	{
-		$q = $this->exec("UPDATE nlogview_idents SET name="
+		$q = $this->exec("UPDATE irc_idents SET name="
 			. $this->quote($ircuserid, 'integer') 
-			. "  WHERE userid=(SELECT userid FROM nlogview_ircusers where ircuserid="
+			. "  WHERE userid=(SELECT userid FROM irc_ircusers where ircuserid="
 			. $this->quote($user, 'text') . ")");
 	}
 
 	private function setHost( $ircuserid, $host )
 	{
-		$q = $this->exec("UPDATE nlogview_hosts set name=$ircuserid WHERE hostid=(SELECT hostid from nlogview_ircusers where ircuserid="
+		$q = $this->exec("UPDATE irc_hosts set name=$ircuserid WHERE hostid=(SELECT hostid from irc_ircusers where ircuserid="
 			. $this->quote($host, 'text') . ")");
 	}
 
@@ -226,25 +226,25 @@ class irssiparser extends parser
 		$oldhostid = $olduserhost[1];
 
 		//update activity table when ircuserid already exists
-		$sql = "UPDATE nlogview_activity act, nlogview_ircusers bad, nlogview_ircusers good ";
+		$sql = "UPDATE irc_activity act, irc_ircusers bad, irc_ircusers good ";
 		$sql .= "SET act.ircuserid = good.ircuserid ";
 		$sql .= "WHERE act.ircuserid = bad.ircuserid AND bad.nickid = good.nickid AND ";
 		$sql .= "bad.userid=$olduserid AND bad.hostid=$oldhostid AND good.userid=$newuserid AND good.hostid=$newhostid";
 		$q = $this->exec($sql);
 
 		//delete rows renedered useless by above update
-		$sql = "DELETE FROM nlogview_ircusers bad ";
-		$sql .= "USING nlogview_ircusers bad, nlogview_ircusers good ";
+		$sql = "DELETE FROM irc_ircusers bad ";
+		$sql .= "USING irc_ircusers bad, irc_ircusers good ";
 		$sql .= "WHERE bad.nickid = good.nickid ";
 		$sql .= "AND bad.userid=$olduserid and bad.hostid=$oldhostid ";
 		$sql .= "AND good.userid=$newuserid and good.hostid=$newhostid ";
 		$q = $this->exec($sql);
 
-		$q = $this->exec("UPDATE nlogview_ircusers SET userid=$newuserid, hostid=$newhostid WHERE userid=$olduserid AND hostid=$oldhostid");
+		$q = $this->exec("UPDATE irc_ircusers SET userid=$newuserid, hostid=$newhostid WHERE userid=$olduserid AND hostid=$oldhostid");
 
-		$q = $this->exec("DELETE FROM nlogview_idents where userid=$olduserid");
+		$q = $this->exec("DELETE FROM irc_idents where userid=$olduserid");
 
-		$q = $this->exec("DELETE FROM nlogview_hosts where hostid=$oldhostid");
+		$q = $this->exec("DELETE FROM irc_hosts where hostid=$oldhostid");
 	}
 
 	private function event_msg( $match )
@@ -417,22 +417,22 @@ class irssiparser extends parser
 	private function setChannelName( $channelid, $channelname )
 	{
 		$sql = "SELECT old.channelid ";
-		$sql .= "FROM nlogview_channels old ";
-		$sql .= "INNER JOIN nlogview_channels new ON new.channelid=$channelid AND new.channelid <> old.channelid ";
+		$sql .= "FROM irc_channels old ";
+		$sql .= "INNER JOIN irc_channels new ON new.channelid=$channelid AND new.channelid <> old.channelid ";
 		$sql .= "WHERE old.name=" . $this->quote($channelname, 'text');
 		$q = $this->query($sql);
 		if($q->numRows() > 0)
 		{
 			$row = $q->fetchrow();
 			$oldchannelid = $row[0];
-			$sql = "UPDATE nlogview_activity SET channelid = $oldchannelid WHERE channelid = $channelid";
+			$sql = "UPDATE irc_activity SET channelid = $oldchannelid WHERE channelid = $channelid";
 			$q = $this->exec($sql);
-			$sql = "DELETE FROM nlogview_channels WHERE channelid = $channelid";
+			$sql = "DELETE FROM irc_channels WHERE channelid = $channelid";
 			$q = $this->exec($sql);
 		}
 		else
 		{
-			$sql = "UPDATE nlogview_channels SET name="
+			$sql = "UPDATE irc_channels SET name="
 				. $this->quote($channelname, 'text')
 				. " WHERE channelid=$channelid";
 			$q = $this->exec($sql);

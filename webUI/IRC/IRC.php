@@ -38,7 +38,7 @@ EOF;
 	public function getLogs()
 	{
 		$logdata = array();
-		$q = $this->query('SELECT * FROM nlogview_logs ORDER BY submittime DESC');
+		$q = $this->query('SELECT * FROM irc_logs ORDER BY submittime DESC');
 		while($row = $q->fetchRow(MDB2_FETCHMODE_ASSOC))
 		{
 			$logdata[] = array(
@@ -54,7 +54,7 @@ EOF;
 	public function getServers()
 	{
 		$serverdata = array();
-		$q = $this->query('SELECT * FROM nlogview_servers');
+		$q = $this->query('SELECT * FROM irc_servers');
 		while($row = $q->fetchRow(MDB2_FETCHMODE_ASSOC))
 		{
 			$serverdata[] = array(
@@ -68,7 +68,7 @@ EOF;
 
 	public function addServer($name, $address)
 	{
-		$sql = 'INSERT INTO nlogview_servers(name, address) VALUES('
+		$sql = 'INSERT INTO irc_servers(name, address) VALUES('
 			. $this->quote($name, 'text') . ','
 			. $this->quote($address, 'text') . ')';
 		$q = $this->exec( $sql );
@@ -78,11 +78,11 @@ EOF;
 	{ // returns array of ircuserids with ircuser data
 		if( is_numeric($nickid) && is_numeric($userid) && is_numeric($hostid) ) {
 			$sql = "SELECT n.name nickname, u.name username, h.name hostname, i.ircuserid, i.nickid, i.userid, i.hostid, count(a.activityid) c ";
-			$sql .= "FROM nlogview_ircusers i ";
-			$sql .= "INNER JOIN nlogview_nicks n ON i.nickid = n.nickid ";
-			$sql .= "INNER JOIN nlogview_idents u ON i.userid = u.userid ";
-			$sql .= "INNER JOIN nlogview_hosts h ON i.hostid = h.hostid ";
-			$sql .= "INNER JOIN nlogview_activity a ON i.ircuserid = a.ircuserid ";
+			$sql .= "FROM irc_ircusers i ";
+			$sql .= "INNER JOIN irc_nicks n ON i.nickid = n.nickid ";
+			$sql .= "INNER JOIN irc_idents u ON i.userid = u.userid ";
+			$sql .= "INNER JOIN irc_hosts h ON i.hostid = h.hostid ";
+			$sql .= "INNER JOIN irc_activity a ON i.ircuserid = a.ircuserid ";
 			if($nickid > 0)
 			{
 				$sql .= " WHERE i.nickid = $nickid ";
@@ -105,11 +105,11 @@ EOF;
 	public function filterByName($nicktype, $usertype, $hosttype, $nickname = '', $username = '', $hostname = '')
 	{
 		$sql = "SELECT n.name nickname, u.name username, h.name hostname, i.ircuserid, i.nickid, i.userid, i.hostid, count(a.activityid) c ";
-		$sql .= "FROM nlogview_ircusers i ";
-		$sql .= "INNER JOIN nlogview_nicks n ON i.nickid = n.nickid ";
-		$sql .= "INNER JOIN nlogview_idents u ON i.userid = u.userid ";
-		$sql .= "INNER JOIN nlogview_hosts h ON i.hostid = h.hostid ";
-		$sql .= "INNER JOIN nlogview_activity a ON i.ircuserid = a.ircuserid WHERE ";
+		$sql .= "FROM irc_ircusers i ";
+		$sql .= "INNER JOIN irc_nicks n ON i.nickid = n.nickid ";
+		$sql .= "INNER JOIN irc_idents u ON i.userid = u.userid ";
+		$sql .= "INNER JOIN irc_hosts h ON i.hostid = h.hostid ";
+		$sql .= "INNER JOIN irc_activity a ON i.ircuserid = a.ircuserid WHERE ";
 
 		$data = array();
 
@@ -214,7 +214,7 @@ EOF;
 
 		//Get first and last date for image map
 		$sql = "select unix_timestamp(min(activitytime)), unix_timestamp(max(activitytime)) ";
-		$sql .= "from nlogview_activity ";
+		$sql .= "from irc_activity ";
 		$sql .= $wherecondition;
 		$q = $this->query($sql);
 		$row = $q->fetchrow();
@@ -262,7 +262,7 @@ EOF;
 
 		//the actual work
 		$sql = "select round(log($logbase,count(activityid)))+1, $celltime * round(unix_timestamp(activitytime) / $celltime) ";
-		$sql .= "from nlogview_activity ";
+		$sql .= "from irc_activity ";
 		$sql .= $wherecondition;
 		$sql .= "group by round(unix_timestamp(activitytime)/$celltime) ";
 		$q = $this->query($sql);
@@ -299,11 +299,11 @@ EOF;
 	public function exploreRelatedUsers( $ircuserids ) {
 		//Create table
 		$tablename = uniqid("explore");
-		$sql = "CREATE TABLE $tablename LIKE nlogview_ircusers";
+		$sql = "CREATE TABLE $tablename LIKE irc_ircusers";
 		$q = $this->exec($sql);
 
 		//Insert seed rows
-		$sql = "INSERT INTO $tablename SELECT * FROM nlogview_ircusers WHERE ircuserid in ( $ircuserids )";
+		$sql = "INSERT INTO $tablename SELECT * FROM irc_ircusers WHERE ircuserid in ( $ircuserids )";
 		$q = $this->exec($sql);
 
 		//Iterative process to explore related users
@@ -314,15 +314,15 @@ EOF;
 		//and so on until it cannot find any more rows to add
 
 		//The insert queries:
-		$nicksql = "insert into $tablename select distinct i.* from nlogview_ircusers i ";
+		$nicksql = "insert into $tablename select distinct i.* from irc_ircusers i ";
 		$nicksql .= "inner join $tablename e on i.userid = e.userid and i.hostid = e.hostid ";
 		$nicksql .= "where i.ircuserid not in (select ircuserid from $tablename)";
 
-		$identsql = "insert into $tablename select distinct i.* from nlogview_ircusers i ";
+		$identsql = "insert into $tablename select distinct i.* from irc_ircusers i ";
 		$identsql .= "inner join $tablename e on i.nickid = e.nickid and i.hostid = e.hostid ";
 		$identsql .= "where i.ircuserid not in (select ircuserid from $tablename)";
 
-		$hostsql = "insert into $tablename select distinct i.* from nlogview_ircusers i ";
+		$hostsql = "insert into $tablename select distinct i.* from irc_ircusers i ";
 		$hostsql .= "inner join $tablename e on i.userid = e.userid and i.nickid = e.nickid ";
 		$hostsql .= "where i.ircuserid not in (select ircuserid from $tablename)";
 
@@ -359,10 +359,10 @@ EOF;
 
 		$sql = "SELECT n.name nickname, u.name username, h.name hostname, i.ircuserid, i.nickid, i.userid, i.hostid, count(a.activityid) c ";
 		$sql .= "FROM $tablename i ";
-		$sql .= "INNER JOIN nlogview_nicks n ON i.nickid = n.nickid ";
-		$sql .= "INNER JOIN nlogview_idents u ON i.userid = u.userid ";
-		$sql .= "INNER JOIN nlogview_hosts h ON i.hostid = h.hostid ";
-		$sql .= "INNER JOIN nlogview_activity a ON i.ircuserid = a.ircuserid ";
+		$sql .= "INNER JOIN irc_nicks n ON i.nickid = n.nickid ";
+		$sql .= "INNER JOIN irc_idents u ON i.userid = u.userid ";
+		$sql .= "INNER JOIN irc_hosts h ON i.hostid = h.hostid ";
+		$sql .= "INNER JOIN irc_activity a ON i.ircuserid = a.ircuserid ";
 		$sql .= "GROUP BY i.ircuserid ";
 		$sql .= "ORDER BY count(a.activityid) DESC";
 
@@ -376,9 +376,9 @@ EOF;
 
 	public function getUserRelations( $ids ) {
 		$result = array();
-		$sql = "SELECT n.name, sum(r.relation) FROM nlogview_ircuser_relation r ";
-		$sql .= "INNER JOIN nlogview_ircusers i on r.toircuser = i.ircuserid ";
-		$sql .= "INNER JOIN nlogview_nicks n on i.nickid = n.nickid ";
+		$sql = "SELECT n.name, sum(r.relation) FROM irc_ircuser_relation r ";
+		$sql .= "INNER JOIN irc_ircusers i on r.toircuser = i.ircuserid ";
+		$sql .= "INNER JOIN irc_nicks n on i.nickid = n.nickid ";
 		$sql .= "WHERE r.fromircuser IN ( $ids ) ";
 		$sql .= "GROUP BY n.name ORDER BY sum(r.relation) DESC ";
 		$q = $this->query( $sql );

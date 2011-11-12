@@ -11,7 +11,7 @@ class Channel extends Server {
 
 	public function __construct( $channelid ) {
 		$this->channelid = $channelid;
-		$sql = "SELECT serverid, name FROM nlogview_channels WHERE channelid = ";
+		$sql = "SELECT serverid, name FROM irc_channels WHERE channelid = ";
 		$sql .= $this->quote( $channelid, 'integer' );
 		$q = $this->query( $sql );
 		$row = $q->fetchrow();
@@ -42,7 +42,7 @@ class Channel extends Server {
 
 	public function getLogs() {
 		$logdata = array();
-		$q = $this->query("select distinct l.* from nlogview_logs l inner join nlogview_activity a on l.logid = a.logid and a.channelid = $this->channelid");
+		$q = $this->query("select distinct l.* from irc_logs l inner join irc_activity a on l.logid = a.logid and a.channelid = $this->channelid");
 		while($row = $q->fetchRow(MDB2_FETCHMODE_ASSOC))
 		{
 			$logdata[] = array(
